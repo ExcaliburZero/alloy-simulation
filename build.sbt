@@ -1,4 +1,4 @@
-name := "alloyparallel"
+name := "alloysimulation"
 
 version := "1.0"
 
@@ -13,7 +13,7 @@ resolvers += Opts.resolver.sonatypeSnapshots
 // Packages
 libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.102-R11"
 
-mainClass in Compile := Some("alloyparallel.Main")
+mainClass in Compile := Some("alloysimulation.Main")
 
 // Linting
 resolvers += Resolver.sonatypeRepo("snapshots")
