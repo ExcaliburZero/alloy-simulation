@@ -120,11 +120,9 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
   }
 
   def saveGNUPlot(filename: String): Unit = {
-    new PrintWriter(filename) { try { write(toGNUPlot) } finally { close } }
-    /*val fw = new FileWriter(filename, true)
-    try {
-      fw.write(toGNUPlot)
+    new PrintWriter(filename) {
+      try { write(toGNUPlot) }
+      finally { close }
     }
-    finally fw.close()*/
   }
 }
