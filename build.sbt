@@ -13,6 +13,9 @@ resolvers += Opts.resolver.sonatypeSnapshots
 // Packages
 libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.102-R11"
 
+libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.13.4"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+
 mainClass in Compile := Some("alloysimulation.Main")
 
 // Linting
