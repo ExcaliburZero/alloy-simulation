@@ -1,6 +1,6 @@
 package alloysimulation
 
-import java.io.FileWriter
+import java.io.PrintWriter
 
 class MaterialsDefinition(const1: Double, const2: Double, const3: Double,
   private val ratios: (Int,Int,Int)) {
@@ -120,10 +120,11 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
   }
 
   def saveGNUPlot(filename: String): Unit = {
-    val fw = new FileWriter(filename, true)
+    new PrintWriter(filename) { try { write(toGNUPlot) } finally { close } }
+    /*val fw = new FileWriter(filename, true)
     try {
       fw.write(toGNUPlot)
     }
-    finally fw.close()
+    finally fw.close()*/
   }
 }

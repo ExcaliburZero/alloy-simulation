@@ -47,5 +47,9 @@ fabric.properties
 ### Scala ###
 *.class
 *.log
+
+### Generated Files ###
+frames/*.txt
+frames/*.png
 project/target/
 target/
