@@ -24,6 +24,9 @@ class MaterialsDefinition(const1: Double, const2: Double, const3: Double,
 object Alloy {
   type Point = Double
   type Material = Array[Double]
+
+  type Generation = Int
+  type DisplayFunction = (Alloy, Generation) => Unit
 }
 
 class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefinition) {

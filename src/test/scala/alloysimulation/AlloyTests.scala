@@ -2,7 +2,7 @@ package alloysimulation
 
 import org.scalatest.{Assertion, FlatSpec, Matchers}
 
-class MainTests extends FlatSpec with Matchers {
+class AlloyTests extends FlatSpec with Matchers {
   "Alloy" should "be able to be instantiated" in {
     val ratios = (25, 15, 60)
     val materialsDef = new MaterialsDefinition(0.15, 0.21, 0.51, ratios)
