@@ -67,7 +67,7 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
     List(p1 / total, p2 / total, p3 / total).toArray
   }
 
-  def random(): Unit = {
+  def randomizeTemps(): Unit = {
     val r = scala.util.Random
     val lines = for (
         x <- 0 until width;
