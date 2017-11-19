@@ -47,3 +47,5 @@ fabric.properties
 ### Scala ###
 *.class
 *.log
+project/target/
+target/
