@@ -61,13 +61,13 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
   }
 
   private def randomMaterial(): Alloy.Material = {
-    val p1 = materialsDef.percent1 + (scala.util.Random.nextDouble() * 50.0) - 25.0
-    val p2 = materialsDef.percent2 + (scala.util.Random.nextDouble() * 50.0) - 25.0
-    val p3 = materialsDef.percent3 + (scala.util.Random.nextDouble() * 50.0) - 25.0
+    val p1 = Math.min(1.0, materialsDef.percent1 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
+    val p2 = Math.min(1.0, materialsDef.percent2 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
+    val p3 = Math.min(1.0, materialsDef.percent3 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
 
     val total = p1 + p2 + p3
 
-    List(p1 / total, p2 / total, p3 / total).toArray
+    List(p1 / total, p2 / total, p3 / total).map(Math.abs(_)).toArray
   }
 
   def randomizeTemps(): Unit = {
@@ -104,6 +104,7 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
       (for ((x, y, z) <- neighbors) yield {
         val temp = this(x, y, z)
         val p = material(x, y, z)(m)
+
         temp * p
       }).sum * getConstant(m)
     }).sum / neighbors.size
