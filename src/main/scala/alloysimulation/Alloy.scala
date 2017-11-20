@@ -56,7 +56,7 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
     materialsDef.getConstant(m)
   }
 
-  private def updateMaterial(x: Int, y: Int, z: Int, value: Alloy.Material): Unit = {
+  def updateMaterial(x: Int, y: Int, z: Int, value: Alloy.Material): Unit = {
     materials(x)(y).update(z, value)
   }
 
@@ -70,22 +70,38 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
     List(p1 / total, p2 / total, p3 / total).map(Math.abs(_)).toArray
   }
 
-  def randomizeTemps(): Unit = {
-    val r = scala.util.Random
-    val lines = for (
-        x <- 0 until width;
-        y <- 0 until height;
-        z <- 0 until depth
-      ) yield update(x, y, z, 10.0 * r.nextDouble)
-  }
+  def mirror(): Alloy = {
+    val other = new Alloy(width, height, depth, materialsDef)
 
-  def calculateNextTemp(): Unit = {
     for (
       x <- 0 until width;
       y <- 0 until height;
       z <- 0 until depth
     ) {
-      update(x, y, z, nextPositionTemp(x, y, z))
+      other.updateMaterial(x, y, z, material(x, y, z))
+    }
+
+    other
+  }
+
+  def randomizeTemps(): Unit = {
+    var maxTemp = 10.0
+
+    val r = scala.util.Random
+    val lines = for (
+        x <- 0 until width;
+        y <- 0 until height;
+        z <- 0 until depth
+      ) yield update(x, y, z, maxTemp * r.nextDouble)
+  }
+
+  def calculateNextTemp(other: Alloy): Unit = {
+    for (
+      x <- 0 until width;
+      y <- 0 until height;
+      z <- 0 until depth
+    ) {
+      other.update(x, y, z, nextPositionTemp(x, y, z))
     }
   }
   
@@ -100,14 +116,19 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
         if wx >= 0 && hy >= 0 && dz >= 0 && wx < width && hy < height && dz < depth
       ) yield (wx, hy, dz)
 
-    (for (m <- 0 until 3) yield {
-      (for ((x, y, z) <- neighbors) yield {
+    val bs = for (m <- 0 until 3) yield {
+      val as = for ((x, y, z) <- neighbors) yield {
         val temp = this(x, y, z)
         val p = material(x, y, z)(m)
 
         temp * p
-      }).sum * getConstant(m)
-    }).sum / neighbors.size
+      }
+      
+      as.sum * getConstant(m)
+    }
+      
+    //bs.sum / bs.length / neighbors.size
+    bs.sum / neighbors.size
   }
 
   def toGNUPlot(): String = {

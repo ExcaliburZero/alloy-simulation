@@ -1,6 +1,8 @@
 #!/bin/bash
 
-for ((i=1;i<=100;i++)); 
+rm *.png
+
+for ((i=0;i<=100;i++)); 
 do 
     gnuplot -e "iteration='$i'" cube.gnu
     echo $i

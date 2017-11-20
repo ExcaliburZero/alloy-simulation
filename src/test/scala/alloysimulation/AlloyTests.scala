@@ -13,8 +13,9 @@ class AlloyTests extends FlatSpec with Matchers {
     val ratios = (25, 15, 60)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
     val alloy = new Alloy(5, 8, 10, materialsDef)
+    val alloy2 = new Alloy(5, 8, 10, materialsDef)
 
-    alloy.calculateNextTemp()
+    alloy.calculateNextTemp(alloy2)
   }
 
   it should "be able to be converted to a GNU plot definition" in {
@@ -75,6 +76,7 @@ class AlloyTests extends FlatSpec with Matchers {
       val ratios = (25, 15, 60)
       val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
       val alloy = new Alloy(w, h, d, materialsDef)
+      val alloy2 = alloy.mirror()
 
       def hasNoNegatives(): Unit = {
         for (
@@ -91,8 +93,12 @@ class AlloyTests extends FlatSpec with Matchers {
       alloy.randomizeTemps()
       hasNoNegatives()
 
-      for (_ <- 0 until 10) {
-        alloy.calculateNextTemp()
+      for (i <- 0 until 10) {
+        if (i % 2 == 0) {
+          alloy.calculateNextTemp(alloy2)
+        } else {
+          alloy2.calculateNextTemp(alloy)
+        }
         hasNoNegatives()
       }
     }
@@ -104,6 +110,7 @@ class AlloyTests extends FlatSpec with Matchers {
     val ratios = (25, 15, 60)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
     val alloy = new Alloy(w, h, d, materialsDef)
+    val alloy2 = alloy.mirror()
 
     def hasAllZeros(): Unit = {
       for (
@@ -119,9 +126,66 @@ class AlloyTests extends FlatSpec with Matchers {
 
     hasAllZeros()
 
-    for (_ <- 0 until 10) {
-      alloy.calculateNextTemp()
+    for (i <- 0 until 10) {
+      if (i % 2 == 0) {
+        alloy.calculateNextTemp(alloy2)
+      } else {
+        alloy2.calculateNextTemp(alloy)
+      }
       hasAllZeros()
     }
+  }
+
+  it should "not increase too much in total temperature" in {
+    for (_ <- 0 until 4) {
+      val (w, h, d) = (10, 20, 5)
+
+      val ratios = (25, 15, 60)
+      val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
+      val alloy = new Alloy(w, h, d, materialsDef)
+      val alloy2 = alloy.mirror()
+
+      alloy.randomizeTemps()
+
+      val total = (for (
+        x <- 0 until w;
+        y <- 0 until h;
+        z <- 0 until d
+      ) yield {
+        val temp = alloy(x, y, z)
+
+        (for (m <- 0 until 3) yield {
+          temp * alloy.material(x, y, z)(m)
+        }).sum
+      }).sum
+
+      for (i <- 0 until 10) {
+        val (a, b) = 
+        if (i % 2 == 0) {
+          (alloy, alloy2)
+        } else {
+          (alloy2, alloy2)
+        }
+
+        a.calculateNextTemp(b)
+
+        val newTotal = (for (
+          x <- 0 until w;
+          y <- 0 until h;
+          z <- 0 until d
+        ) yield {
+          val temp = b(x, y, z)
+
+          (for (m <- 0 until 3) yield {
+            temp * b.material(x, y, z)(m)
+          }).sum
+        }).sum
+
+        println(newTotal - total)
+
+        assert(Math.abs(newTotal - total) < 2000.0)
+      }
+    }
+
   }
 }
