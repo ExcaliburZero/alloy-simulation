@@ -67,8 +67,9 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
 
     val total = p1 + p2 + p3
 
-    List(p1 / total, p2 / total, p3 / total).map(Math.abs(_)).toArray
+    //List(p1 / total, p2 / total, p3 / total).map(Math.abs(_)).toArray
     //List(0.333, 0.333, 0.333).toArray
+    List(0.0, 1.0, 0.0).toArray
   }
 
   def mirror(): Alloy = {
@@ -86,14 +87,14 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
   }
 
   def randomizeTemps(): Unit = {
-    var maxTemp = 10.0
+    var stdTemp = 255.0 / 2.5
 
     val r = scala.util.Random
     val lines = for (
         x <- 0 until width;
         y <- 0 until height;
         z <- 0 until depth
-      ) yield update(x, y, z, maxTemp * r.nextDouble)
+      ) yield update(x, y, z, stdTemp * Math.abs(r.nextGaussian()))
   }
 
   def calculateNextTemp(other: Alloy): Unit = {

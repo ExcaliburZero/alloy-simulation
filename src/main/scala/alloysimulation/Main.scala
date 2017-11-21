@@ -8,17 +8,16 @@ object Main {
     val displayFunction = writeAlloyToFile(_,_)
 
     val strategy: Strategy =
-      //new SingleThreadStrategy(5, 8,10, materialsDef, iterations,
-      new SingleThreadStrategy(100, 100, 1, materialsDef, iterations,
+      new SingleThreadStrategy(256, 256, 1, materialsDef, iterations,
         displayFunction)
 
     strategy.run()
   }
 
   def writeAlloyToFile(alloy: Alloy, generation: Alloy.Generation): Unit = {
-    //val filepath = f"frames/$generation.txt"
-    //alloy.saveGNUPlot(filepath)
     val filepath = f"frames/$generation.ppm"
     alloy.toRGBBitmap.writeToPPM(filepath)
+
+    println(generation)
   }
 }
