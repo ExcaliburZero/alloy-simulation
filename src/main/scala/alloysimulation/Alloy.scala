@@ -30,9 +30,13 @@ object Alloy {
 }
 
 class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefinition) {
-  private val points = Array.ofDim[Alloy.Point](width, height, depth)
+  var points = Array.ofDim[Alloy.Point](width, height, depth)
+  var materials = Array.ofDim[Double](width, height, depth, 3)
 
-  val materials = Array.ofDim[Double](width, height, depth, 3)
+  private var startWidth = 0
+  private var startHeight = 0
+  private var endWidth = width
+  private var endHeight = height
 
   for (
     x <- 0 until width;
@@ -99,8 +103,8 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
 
   def calculateNextTemp(other: Alloy): Unit = {
     for (
-      x <- 0 until width;
-      y <- 0 until height;
+      x <- startWidth until endWidth;
+      y <- startHeight until endHeight;
       z <- 0 until depth
     ) {
       other.update(x, y, z, nextPositionTemp(x, y, z))
@@ -130,6 +134,36 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
     }
 
     bs.sum / neighbors.size
+  }
+
+  def setSubDimensions(sw: Int, sh: Int, ew: Int, eh: Int): Unit = {
+    startWidth = sw
+    startHeight = sh
+    endWidth = ew
+    endHeight = eh
+  }
+
+  def getWorkLoad(): Int = {
+    (endWidth - startWidth) * (endHeight - startHeight)
+  }
+
+  def split(): List[Alloy] = {
+    val numPieces = 2
+    val pieceSize = (endWidth - startWidth) / numPieces
+
+    (for (i <- 0 until numPieces) yield {
+      val subAlloy = new Alloy(width, height, depth, materialsDef)
+      subAlloy.points = points
+      subAlloy.materials = materials
+
+      val sw = startWidth + pieceSize * i
+      val sh = startHeight
+      val ew = endWidth - (pieceSize * (numPieces - (i + 1)))
+      val eh = endHeight
+      subAlloy.setSubDimensions(sw, sh, ew, eh)
+
+      subAlloy
+    }).toList
   }
 
   def toGNUPlot(): String = {
