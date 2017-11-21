@@ -117,13 +117,6 @@ class Alloy(width: Int, height: Int, depth: Int,
         if wx >= 0 && hy >= 0 && dz >= 0 && wx < width && hy < height && dz < depth
       ) yield (wx, hy, dz)
 
-    for ((x, y, z) <- neighbors) {
-      val materialSum = (for (m <- 0 until 3) yield material(x, y, z)(m)).sum
-      if (Math.abs(materialSum - 1.0) > 0.1) {
-        //println(f"bad: $materialSum")
-      }
-    }
-
     val bs = for (m <- 0 until 3) yield {
       val as = for ((x, y, z) <- neighbors) yield {
         val temp = this(x, y, z)
@@ -132,7 +125,6 @@ class Alloy(width: Int, height: Int, depth: Int,
         temp * p
       }
 
-      //as.sum * getConstant(m)
       as.sum
     }
 
@@ -175,18 +167,5 @@ class Alloy(width: Int, height: Int, depth: Int,
       try { write(toGNUPlot) }
       finally { close }
     }
-  }
-
-  def toRGBBitmap(): RGBBitmap = {
-    val rgbBitmap = new RGBBitmap(width, height)
-
-    for (
-      x <- 0 until width;
-      y <- 0 until height
-    ) {
-      rgbBitmap.updateColor(x, y, (this(x, y, 0) + 1.0).toInt, 0, 0)
-    }
-
-    rgbBitmap
   }
 }
