@@ -51,6 +51,7 @@ fabric.properties
 ### Generated Files ###
 frames/*.txt
 frames/*.png
+frames/*.ppm
 frames/cube.gif
 project/target/
 target/

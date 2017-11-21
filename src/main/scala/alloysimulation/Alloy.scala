@@ -68,6 +68,7 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
     val total = p1 + p2 + p3
 
     List(p1 / total, p2 / total, p3 / total).map(Math.abs(_)).toArray
+    //List(0.333, 0.333, 0.333).toArray
   }
 
   def mirror(): Alloy = {
@@ -104,7 +105,7 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
       other.update(x, y, z, nextPositionTemp(x, y, z))
     }
   }
-  
+
   private def nextPositionTemp(w: Int, h: Int, d: Int): Alloy.Point = {
     val neighbors = for (
         x <- -1 to 1;
@@ -123,11 +124,10 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
 
         temp * p
       }
-      
+
       as.sum * getConstant(m)
     }
-      
-    //bs.sum / bs.length / neighbors.size
+
     bs.sum / neighbors.size
   }
 
@@ -146,5 +146,18 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
       try { write(toGNUPlot) }
       finally { close }
     }
+  }
+
+  def toRGBBitmap(): RGBBitmap = {
+    val rgbBitmap = new RGBBitmap(width, height)
+
+    for (
+      x <- 0 until width;
+      y <- 0 until height
+    ) {
+      rgbBitmap.updateColor(x, y, (this(x, y, 0) + 1.0).toInt, 0, 0)
+    }
+
+    rgbBitmap
   }
 }
