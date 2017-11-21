@@ -8,8 +8,10 @@ class ForkJoinStrategy(width: Int, height: Int, depth: Int,
   displayFunction: Alloy.DisplayFunction,
   smallThreshold: Int) extends Strategy {
 
-  val alloy = new Alloy(width, height, depth, materialsDef)
+  val alloy = Alloy(width, height, depth, materialsDef)
   val alloy2 = alloy.mirror()
+
+  alloy.randomizeTemps()
 
   alloy.update(0, 0, 0, 1000000)
   alloy.update(width - 1, height - 1, 0, 1000000)
@@ -24,7 +26,7 @@ class ForkJoinStrategy(width: Int, height: Int, depth: Int,
 
       displayFunction(a, i)
 
-      val forkJoinPool = new ForkJoinPool(4)
+      val forkJoinPool = new ForkJoinPool()
       val task = new ForkJoinTask(smallThreshold, a, b)
 
       forkJoinPool.invoke(task)

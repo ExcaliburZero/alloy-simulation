@@ -27,22 +27,42 @@ object Alloy {
 
   type Generation = Int
   type DisplayFunction = (Alloy, Generation) => Unit
+
+  def apply(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefinition): Alloy = {
+    var points = Array.ofDim[Alloy.Point](width, height, depth)
+    var materials = Array.ofDim[Double](width, height, depth, 3)
+
+    for (
+      x <- 0 until width;
+      y <- 0 until height;
+      z <- 0 until depth
+    ) yield materials(x)(y).update(z, randomMaterial(materialsDef))
+
+    new Alloy(width, height, depth, materialsDef, points, materials,
+      0, 0, width, height)
+  }
+
+  def randomMaterial(materialsDef: MaterialsDefinition): Alloy.Material = {
+    val p1 = Math.min(1.0, materialsDef.percent1 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
+    val p2 = Math.min(1.0, materialsDef.percent2 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
+    val p3 = Math.min(1.0, materialsDef.percent3 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
+
+    val total = p1 + p2 + p3
+
+    //List(p1 / total, p2 / total, p3 / total).map(Math.abs(_)).toArray
+    //List(0.333, 0.333, 0.333).toArray
+    List(0.0, 1.0, 0.0).toArray
+  }
 }
 
-class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefinition) {
-  var points = Array.ofDim[Alloy.Point](width, height, depth)
-  var materials = Array.ofDim[Double](width, height, depth, 3)
+class Alloy(width: Int, height: Int, depth: Int,
+  materialsDef: MaterialsDefinition,
+  points: Array[Array[Array[Alloy.Point]]],
+  materials: Array[Array[Array[Alloy.Material]]],
+  startWidth: Int, startHeight: Int, endWidth: Int, endHeight: Int) {
 
-  private var startWidth = 0
-  private var startHeight = 0
-  private var endWidth = width
-  private var endHeight = height
-
-  for (
-    x <- 0 until width;
-    y <- 0 until height;
-    z <- 0 until depth
-  ) yield updateMaterial(x, y, z, randomMaterial())
+  def getWidth(): Int = { width }
+  def getHeight(): Int = { height }
 
   def apply(x: Int, y: Int, z: Int): Alloy.Point = {
     points(x)(y)(z)
@@ -60,34 +80,11 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
     materialsDef.getConstant(m)
   }
 
-  def updateMaterial(x: Int, y: Int, z: Int, value: Alloy.Material): Unit = {
-    materials(x)(y).update(z, value)
-  }
-
-  private def randomMaterial(): Alloy.Material = {
-    val p1 = Math.min(1.0, materialsDef.percent1 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
-    val p2 = Math.min(1.0, materialsDef.percent2 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
-    val p3 = Math.min(1.0, materialsDef.percent3 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
-
-    val total = p1 + p2 + p3
-
-    //List(p1 / total, p2 / total, p3 / total).map(Math.abs(_)).toArray
-    //List(0.333, 0.333, 0.333).toArray
-    List(0.0, 1.0, 0.0).toArray
-  }
-
   def mirror(): Alloy = {
-    val other = new Alloy(width, height, depth, materialsDef)
+    var newPoints = Array.ofDim[Alloy.Point](width, height, depth)
 
-    for (
-      x <- 0 until width;
-      y <- 0 until height;
-      z <- 0 until depth
-    ) {
-      other.updateMaterial(x, y, z, material(x, y, z))
-    }
-
-    other
+    new Alloy(width, height, depth, materialsDef, newPoints, materials,
+      startWidth, startHeight, endWidth, endHeight)
   }
 
   def randomizeTemps(): Unit = {
@@ -136,13 +133,6 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
     bs.sum / neighbors.size
   }
 
-  def setSubDimensions(sw: Int, sh: Int, ew: Int, eh: Int): Unit = {
-    startWidth = sw
-    startHeight = sh
-    endWidth = ew
-    endHeight = eh
-  }
-
   def getWorkLoad(): Int = {
     (endWidth - startWidth) * (endHeight - startHeight)
   }
@@ -152,15 +142,13 @@ class Alloy(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefiniti
     val pieceSize = (endWidth - startWidth) / numPieces
 
     (for (i <- 0 until numPieces) yield {
-      val subAlloy = new Alloy(width, height, depth, materialsDef)
-      subAlloy.points = points
-      subAlloy.materials = materials
-
       val sw = startWidth + pieceSize * i
       val sh = startHeight
       val ew = endWidth - (pieceSize * (numPieces - (i + 1)))
       val eh = endHeight
-      subAlloy.setSubDimensions(sw, sh, ew, eh)
+
+      val subAlloy = new Alloy(width, height, depth, materialsDef,
+        points, materials, sw, sh, ew, eh)
 
       subAlloy
     }).toList

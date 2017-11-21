@@ -4,7 +4,7 @@ class SingleThreadStrategy(width: Int, height: Int, depth: Int,
   materialsDef: MaterialsDefinition, iterations: Int,
   displayFunction: Alloy.DisplayFunction) extends Strategy {
 
-  val alloy = new Alloy(width, height, depth, materialsDef)
+  val alloy = Alloy(width, height, depth, materialsDef)
   val alloy2 = alloy.mirror()
 
   alloy.update(0, 0, 0, 1000000)
