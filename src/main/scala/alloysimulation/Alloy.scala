@@ -43,15 +43,13 @@ object Alloy {
   }
 
   def randomMaterial(materialsDef: MaterialsDefinition): Alloy.Material = {
-    val p1 = Math.min(1.0, materialsDef.percent1 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
-    val p2 = Math.min(1.0, materialsDef.percent2 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
-    val p3 = Math.min(1.0, materialsDef.percent3 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
+    val p1 = Math.max(0.00001, materialsDef.percent1 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
+    val p2 = Math.max(0.00001, materialsDef.percent2 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
+    val p3 = Math.max(0.00001, materialsDef.percent3 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
 
     val total = p1 + p2 + p3
 
-    //List(p1 / total, p2 / total, p3 / total).map(Math.abs(_)).toArray
-    //List(0.333, 0.333, 0.333).toArray
-    List(0.0, 1.0, 0.0).toArray
+    Array(p1 / total, p2 / total, p3 / total).map(Math.abs(_))
   }
 }
 
@@ -119,6 +117,13 @@ class Alloy(width: Int, height: Int, depth: Int,
         if wx >= 0 && hy >= 0 && dz >= 0 && wx < width && hy < height && dz < depth
       ) yield (wx, hy, dz)
 
+    for ((x, y, z) <- neighbors) {
+      val materialSum = (for (m <- 0 until 3) yield material(x, y, z)(m)).sum
+      if (Math.abs(materialSum - 1.0) > 0.1) {
+        //println(f"bad: $materialSum")
+      }
+    }
+
     val bs = for (m <- 0 until 3) yield {
       val as = for ((x, y, z) <- neighbors) yield {
         val temp = this(x, y, z)
@@ -127,7 +132,8 @@ class Alloy(width: Int, height: Int, depth: Int,
         temp * p
       }
 
-      as.sum * getConstant(m)
+      //as.sum * getConstant(m)
+      as.sum
     }
 
     bs.sum / neighbors.size

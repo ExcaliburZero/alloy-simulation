@@ -1,5 +1,6 @@
 package alloysimulation
 
+import java.awt.Color
 import java.awt.image.BufferedImage
 
 import java.io.DataOutputStream
@@ -18,9 +19,9 @@ object RGBBitmap {
     for(
       x <- 0 until alloy.getWidth();
       y <- 0 until alloy.getHeight();
-      c = Math.min(alloy(x, y, 0).toInt, 255) * 3
+      c = Math.min(alloy(x, y, 0).toInt, 255)
     ){
-      image.setRGB(x, y, c)
+      image.setRGB(x, y, (new Color(c, 0, 0)).getRGB())
     }
 
     ImageIO.write(image, "png", new File(filepath))

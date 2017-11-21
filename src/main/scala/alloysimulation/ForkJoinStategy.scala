@@ -11,10 +11,39 @@ class ForkJoinStrategy(width: Int, height: Int, depth: Int,
   val alloy = Alloy(width, height, depth, materialsDef)
   val alloy2 = alloy.mirror()
 
-  alloy.randomizeTemps()
+  stampPattern()
 
-  alloy.update(0, 0, 0, 1000000)
-  alloy.update(width - 1, height - 1, 0, 1000000)
+  private def stampPattern(): Unit = {
+    val temperature = 7000
+
+    val widthBrush = width / 10
+    val heightBrush = width / 10
+
+    val boundary = ((width / 2) * 0.8).toInt
+    val numRings = 12
+    val interval = boundary / numRings
+
+    val centerX = width / 2
+    val centerY = height / 2
+    for (
+      r <- 1 until boundary;
+      if r % interval == 0
+    ) {
+      val numRotations = r / interval * 2
+      val rotationDeg = 360 / numRotations
+
+      for (d <- 0 until numRotations) {
+        val points = for(i <- 0 until 6) yield {
+          (centerX + r * Math.cos(d * rotationDeg + i * 2 * Math.PI / 6),
+           centerY + r * Math.sin(d * rotationDeg + i * 2 * Math.PI / 6))
+        }
+
+        for ((x, y) <- points) {
+          alloy.update(x.toInt, y.toInt, 0, temperature)
+        }
+      }
+    }
+  }
 
   def run(): Unit = {
     for (i <- 0 until iterations) {
@@ -31,8 +60,8 @@ class ForkJoinStrategy(width: Int, height: Int, depth: Int,
 
       forkJoinPool.invoke(task)
 
-      alloy.update(0, 0, 0, 1000000)
-      alloy.update(width - 1, height - 1, 0, 1000000)
+      //alloy.update(0, 0, 0, 1000000)
+      //alloy.update(width - 1, height - 1, 0, 1000000)
     }
   }
 }
