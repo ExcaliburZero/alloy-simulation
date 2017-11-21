@@ -4,12 +4,12 @@ object Main {
   def main(args: Array[String]): Unit = {
     val ratios = (33, 33, 33)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val iterations = 250
+    val iterations = 200//250
     val displayFunction = writeAlloyToFile(_,_)
     val smallThreshold = 16384
 
-    val width = 1024//256
-    val height = 1024//256
+    val width = 256
+    val height = 256
 
     val strategy: Strategy =
       //new SingleThreadStrategy(width, height, 1, materialsDef, iterations,

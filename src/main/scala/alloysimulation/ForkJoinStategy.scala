@@ -12,6 +12,21 @@ class ForkJoinStrategy(width: Int, height: Int, depth: Int,
   val alloy2 = alloy.mirror()
 
   stampPattern()
+  stampDots()
+
+  private def stampDots(): Unit = {
+    val temperature = 10000
+
+    for (
+      a <- List(1, 9);
+      b <- List(1, 9)
+    ) {
+      val x = a * (width / 10)
+      val y = b * (height / 10)
+
+      alloy.update(x.toInt, y.toInt, 0, temperature * (a + b))
+    }
+  }
 
   private def stampPattern(): Unit = {
     val temperature = 7000
