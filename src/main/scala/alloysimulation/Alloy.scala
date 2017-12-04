@@ -43,9 +43,10 @@ object Alloy {
   }
 
   def randomMaterial(materialsDef: MaterialsDefinition): Alloy.Material = {
-    val p1 = Math.max(0.00001, materialsDef.percent1 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
-    val p2 = Math.max(0.00001, materialsDef.percent2 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
-    val p3 = Math.max(0.00001, materialsDef.percent3 + (scala.util.Random.nextDouble() * 50.0) - 25.0)
+    val variance = 12.0
+    val p1 = Math.max(0.00001, materialsDef.percent1 + (scala.util.Random.nextDouble() * variance * 2) - variance)
+    val p2 = Math.max(0.00001, materialsDef.percent2 + (scala.util.Random.nextDouble() * variance * 2) - variance)
+    val p3 = Math.max(0.00001, materialsDef.percent3 + (scala.util.Random.nextDouble() * variance * 2) - variance)
 
     val total = p1 + p2 + p3
 
@@ -125,7 +126,7 @@ class Alloy(width: Int, height: Int, depth: Int,
         temp * p
       }
 
-      as.sum
+      as.sum * materialsDef.getConstant(m)
     }
 
     bs.sum / neighbors.size
