@@ -2,8 +2,8 @@ package alloysimulation
 
 import java.io.PrintWriter
 
-class MaterialsDefinition(const1: Double, const2: Double, const3: Double,
-  private val ratios: (Int,Int,Int)) {
+case class MaterialsDefinition(const1: Double, const2: Double, const3: Double,
+  ratios: (Int,Int,Int)) {
 
   private val totalRatios: Double = ratios._1 + ratios._2 + ratios._3
   val percent1 = ratios._1 / totalRatios
@@ -54,7 +54,7 @@ object Alloy {
   }
 }
 
-class Alloy(width: Int, height: Int, depth: Int,
+case class Alloy(width: Int, height: Int, depth: Int,
   materialsDef: MaterialsDefinition,
   points: Array[Array[Array[Alloy.Point]]],
   materials: Array[Array[Array[Alloy.Material]]],
