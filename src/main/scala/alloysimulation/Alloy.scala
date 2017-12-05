@@ -23,6 +23,7 @@ case class MaterialsDefinition(const1: Double, const2: Double, const3: Double,
 
 object Alloy {
   type Point = Double
+  type Points = Array[Array[Array[Double]]]
   type Material = Array[Double]
 
   type Generation = Int

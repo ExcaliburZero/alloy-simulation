@@ -11,18 +11,51 @@ import java.util.Scanner
 import java.util.concurrent.locks.ReentrantLock
 
 object ClusterClientProtocol {
-  def recieveMaterialsDefinition(input: DataInputStream): MaterialsDefinition = {
-    val const1 = input.readDouble()
-    val const2 = input.readDouble()
-    val const3 = input.readDouble()
+  def recieveMaterialsDefinition(input: InputStream): MaterialsDefinition = {
+    withInput(input, i => {
+      val const1 = i.readDouble()
+      val const2 = i.readDouble()
+      val const3 = i.readDouble()
 
-    val ratios1 = input.readInt()
-    val ratios2 = input.readInt()
-    val ratios3 = input.readInt()
+      val ratios1 = i.readInt()
+      val ratios2 = i.readInt()
+      val ratios3 = i.readInt()
 
-    val ratios = (ratios1, ratios2, ratios3)
+      val ratios = (ratios1, ratios2, ratios3)
 
-    MaterialsDefinition(const1, const2, const3, ratios)
+      MaterialsDefinition(const1, const2, const3, ratios)
+    })
+  }
+
+  def recievePointsSection(input: InputStream): Alloy.Points = {
+    withInput(input, i => {
+      val width = i.readInt()
+      val height = i.readInt()
+      val depth = i.readInt()
+
+      var points = Array.ofDim[Alloy.Point](width, height, depth)
+
+      for (
+        x <- 0 until width;
+        y <- 0 until height;
+        z <- 0 until depth
+      ) {
+        points(x)(y).update(z, i.readDouble())
+      }
+
+      points
+    })
+  }
+
+  private def withInput[A](input: InputStream,
+    function: (DataInputStream => A)): A = {
+    val in = new DataInputStream(input)
+
+    try {
+      function(in)
+    } finally {
+      in.close()
+    }
   }
 }
 
@@ -82,7 +115,7 @@ class ClusterClientProtocol(name: String, input: InputStream,
   private def recieveInitialData(): Alloy = {
     val materialsDef = ClusterClientProtocol.recieveMaterialsDefinition(
       ???)
-    val points = recievePointsSection()
+    val points = ClusterClientProtocol.recievePointsSection(???)
     val materials = recieveMaterialsSection()
 
     val width = points.length
@@ -95,38 +128,6 @@ class ClusterClientProtocol(name: String, input: InputStream,
 
     Alloy(width, height, depth, materialsDef, points, materials,
       startWidth, startHeight, endWidth, endHeight)
-  }
-
-  /*private def recieveMaterialsDefinition(): MaterialsDefinition = {
-    val const1 = inputReader.nextDouble()
-    val const2 = inputReader.nextDouble()
-    val const3 = inputReader.nextDouble()
-
-    val ratios1 = inputReader.nextInt()
-    val ratios2 = inputReader.nextInt()
-    val ratios3 = inputReader.nextInt()
-
-    val ratios = (ratios1, ratios2, ratios3)
-
-    MaterialsDefinition(const1, const2, const3, ratios)
-  }*/
-
-  private def recievePointsSection(): Array[Array[Array[Alloy.Point]]] = {
-    val width = inputReader.nextInt()
-    val height = inputReader.nextInt()
-    val depth = inputReader.nextInt()
-
-    var points = Array.ofDim[Alloy.Point](width, height, depth)
-
-    for (
-      x <- 0 until width;
-      y <- 0 until height;
-      z <- 0 until depth
-    ) {
-      points(x)(y).update(z, inputReader.nextDouble())
-    }
-
-    points
   }
 
   private def recieveMaterialsSection(): Array[Array[Array[Array[Double]]]] = {

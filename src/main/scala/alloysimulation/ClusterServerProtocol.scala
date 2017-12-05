@@ -13,7 +13,7 @@ import java.util.Scanner
 import java.util.concurrent.Phaser
 import java.util.concurrent.locks.ReentrantLock
 
-case class DataRange(start: Int, end: Int, width: Int, height:Int,
+case class DataRange(start: Int, end: Int, width: Int, height: Int,
   depth: Int, hasAbove: Boolean, hasBelow: Boolean)
 
 object ClusterServerProtocol {
@@ -27,6 +27,28 @@ object ClusterServerProtocol {
       o.writeInt(matDef.ratios._1)
       o.writeInt(matDef.ratios._2)
       o.writeInt(matDef.ratios._3)
+    })
+  }
+
+  def sendPointsSection(output: OutputStream, range: DataRange,
+    points: Alloy.Points): Unit = {
+    // TODO(chris): Add handling for borders
+    val width = range.width
+    val height = range.height
+    val depth = range.depth
+
+    withOutput(output, o => {
+      o.writeInt(width)
+      o.writeInt(height)
+      o.writeInt(depth)
+
+      for (
+        x <- 0 until width;
+        y <- 0 until height;
+        z <- 0 until depth
+      ) {
+        o.writeDouble(points(x)(y)(z))
+      }
     })
   }
 
@@ -99,34 +121,8 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
 
   private def sendInitialData(): Unit = {
     ClusterServerProtocol.sendMaterialsDefinition(???, a.materialsDef)
-    sendPointsSection()
+    ClusterServerProtocol.sendPointsSection(???, range, a.points)
     sendMaterialsSection()
-  }
-
-  /*private def sendMaterialsDefinition(matDef: MaterialsDefinition): Unit = {
-    outputWriter.print(matDef.const1)
-    outputWriter.print(matDef.const2)
-    outputWriter.print(matDef.const3)
-
-    outputWriter.print(matDef.ratios._1)
-    outputWriter.print(matDef.ratios._2)
-    outputWriter.print(matDef.ratios._3)
-  }*/
-
-  private def sendPointsSection(): Unit = {
-    // TODO(chris): Add handling for borders
-
-    outputWriter.print(range.width)
-    outputWriter.print(range.height)
-    outputWriter.print(range.depth)
-
-    for (
-      x <- 0 until range.width;
-      y <- 0 until range.height;
-      z <- 0 until range.depth
-    ) {
-      outputWriter.print(a(x, y, z))
-    }
   }
 
   private def sendMaterialsSection(): Unit = {
