@@ -47,6 +47,29 @@ object ClusterClientProtocol {
     })
   }
 
+  def recieveMaterialsSection(input: InputStream): Alloy.Materials = {
+    withInput(input, i => {
+      val width = i.readInt()
+      val height = i.readInt()
+      val depth = i.readInt()
+
+      var materials = Array.ofDim[Double](width, height, depth, 3)
+
+      for (
+        x <- 0 until width;
+        y <- 0 until height;
+        z <- 0 until depth;
+        m <- 0 until 3
+      ) {
+        materials(x)(y)(z).update(m, i.readDouble())
+      }
+
+      materials
+    })
+  }
+
+
+
   private def withInput[A](input: InputStream,
     function: (DataInputStream => A)): A = {
     val in = new DataInputStream(input)
@@ -116,7 +139,7 @@ class ClusterClientProtocol(name: String, input: InputStream,
     val materialsDef = ClusterClientProtocol.recieveMaterialsDefinition(
       ???)
     val points = ClusterClientProtocol.recievePointsSection(???)
-    val materials = recieveMaterialsSection()
+    val materials = ClusterClientProtocol.recieveMaterialsSection(???)
 
     val width = points.length
     val height = points(0).length
@@ -128,25 +151,6 @@ class ClusterClientProtocol(name: String, input: InputStream,
 
     Alloy(width, height, depth, materialsDef, points, materials,
       startWidth, startHeight, endWidth, endHeight)
-  }
-
-  private def recieveMaterialsSection(): Array[Array[Array[Array[Double]]]] = {
-    val width = inputReader.nextInt()
-    val height = inputReader.nextInt()
-    val depth = inputReader.nextInt()
-
-    var materials = Array.ofDim[Double](width, height, depth, 3)
-
-    for (
-      x <- 0 until width;
-      y <- 0 until height;
-      z <- 0 until depth;
-      m <- 0 until 3
-    ) {
-      materials(x)(y)(z).update(m, inputReader.nextDouble())
-    }
-
-    materials
   }
 
   private def calculateNewTemperatures(): Unit = {

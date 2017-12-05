@@ -40,6 +40,21 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     actual shouldBe points
   }
 
+  it should "be able to send and recieve materials points" in {
+    val range = DataRange(0, 2, 3, 2, 1, false, false)
+    val materials = Array.ofDim[Alloy.Point](3, 2, 1, 3)
+
+    materials(0)(1)(0).update(0, 0.24)
+    materials(2)(0)(0).update(2, -1.34)
+
+    val (input, output) = getInOut()
+
+    ClusterServerProtocol.sendMaterialsSection(output, range, materials)
+    val actual = ClusterClientProtocol.recieveMaterialsSection(input)
+
+    actual shouldBe materials
+  }
+
   private def getInOut(): (DataInputStream, OutputStream) = {
     val in = new PipedInputStream()
     val out = new PipedOutputStream(in)

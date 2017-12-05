@@ -33,7 +33,10 @@ object ClusterServerProtocol {
   def sendPointsSection(output: OutputStream, range: DataRange,
     points: Alloy.Points): Unit = {
     // TODO(chris): Add handling for borders
-    val width = range.width
+    val start = range.start
+    val end = range.end
+
+    val width = end - start + 1
     val height = range.height
     val depth = range.depth
 
@@ -43,11 +46,36 @@ object ClusterServerProtocol {
       o.writeInt(depth)
 
       for (
-        x <- 0 until width;
+        x <- start to end;
         y <- 0 until height;
         z <- 0 until depth
       ) {
         o.writeDouble(points(x)(y)(z))
+      }
+    })
+  }
+
+  def sendMaterialsSection(output: OutputStream, range: DataRange,
+    materials: Alloy.Materials): Unit = {
+    val start = range.start
+    val end = range.end
+
+    val width = end - start + 1
+    val height = range.height
+    val depth = range.depth
+
+    withOutput(output, o => {
+      o.writeInt(width)
+      o.writeInt(height)
+      o.writeInt(depth)
+
+      for (
+        x <- start to end;
+        y <- 0 until height;
+        z <- 0 until depth;
+        m <- 0 until 3
+      ) {
+        o.writeDouble(materials(x)(y)(z)(m))
       }
     })
   }
@@ -122,21 +150,7 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
   private def sendInitialData(): Unit = {
     ClusterServerProtocol.sendMaterialsDefinition(???, a.materialsDef)
     ClusterServerProtocol.sendPointsSection(???, range, a.points)
-    sendMaterialsSection()
-  }
-
-  private def sendMaterialsSection(): Unit = {
-    outputWriter.print(range.width)
-    outputWriter.print(range.height)
-    outputWriter.print(range.depth)
-
-    for (
-      x <- 0 until range.width;
-      y <- 0 until range.height;
-      z <- 0 until range.depth
-    ) {
-      outputWriter.print(a.material(x, y, z))
-    }
+    ClusterServerProtocol.sendMaterialsSection(???, range, a.materials)
   }
 
   private def recieveNewTemperatures(): Unit = {
