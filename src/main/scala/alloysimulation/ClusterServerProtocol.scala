@@ -1,5 +1,7 @@
 package alloysimulation
 
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.PrintWriter
@@ -13,6 +15,33 @@ import java.util.concurrent.locks.ReentrantLock
 
 case class DataRange(start: Int, end: Int, width: Int, height:Int,
   depth: Int, hasAbove: Boolean, hasBelow: Boolean)
+
+object ClusterServerProtocol {
+  def sendMaterialsDefinition(output: OutputStream,
+    matDef: MaterialsDefinition): Unit = {
+    withOutput(output, o => {
+      o.writeDouble(matDef.const1)
+      o.writeDouble(matDef.const2)
+      o.writeDouble(matDef.const3)
+
+      o.writeInt(matDef.ratios._1)
+      o.writeInt(matDef.ratios._2)
+      o.writeInt(matDef.ratios._3)
+    })
+  }
+
+  private def withOutput[A](output: OutputStream,
+    function: (DataOutputStream => A)): A = {
+    val out = new DataOutputStream(output)
+
+    try {
+      function(out)
+    } finally {
+      out.flush()
+      out.close()
+    }
+  }
+}
 
 class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
   numGenerations: Int, range: DataRange, phaser: Phaser,
@@ -30,8 +59,7 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
     sendInitialData()
 
     while (!isClosed) {
-      waitForNewTemperatures()
-      storeNewTemperatures()
+      recieveNewTemperatures()
 
       waitForOthers()
       if (isDone()) {
@@ -70,12 +98,12 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
   }
 
   private def sendInitialData(): Unit = {
-    sendMaterialsDefinition(a.materialsDef)
+    ClusterServerProtocol.sendMaterialsDefinition(???, a.materialsDef)
     sendPointsSection()
     sendMaterialsSection()
   }
 
-  private def sendMaterialsDefinition(matDef: MaterialsDefinition): Unit = {
+  /*private def sendMaterialsDefinition(matDef: MaterialsDefinition): Unit = {
     outputWriter.print(matDef.const1)
     outputWriter.print(matDef.const2)
     outputWriter.print(matDef.const3)
@@ -83,7 +111,7 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
     outputWriter.print(matDef.ratios._1)
     outputWriter.print(matDef.ratios._2)
     outputWriter.print(matDef.ratios._3)
-  }
+  }*/
 
   private def sendPointsSection(): Unit = {
     // TODO(chris): Add handling for borders
@@ -115,11 +143,7 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
     }
   }
 
-  private def waitForNewTemperatures(): Unit = {
-    ???
-  }
-
-  private def storeNewTemperatures(): Unit = {
+  private def recieveNewTemperatures(): Unit = {
     ???
   }
 

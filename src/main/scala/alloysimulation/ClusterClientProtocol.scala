@@ -1,5 +1,7 @@
 package alloysimulation
 
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.PrintWriter
@@ -7,6 +9,22 @@ import java.io.PrintWriter
 import java.util.Scanner
 
 import java.util.concurrent.locks.ReentrantLock
+
+object ClusterClientProtocol {
+  def recieveMaterialsDefinition(input: DataInputStream): MaterialsDefinition = {
+    val const1 = input.readDouble()
+    val const2 = input.readDouble()
+    val const3 = input.readDouble()
+
+    val ratios1 = input.readInt()
+    val ratios2 = input.readInt()
+    val ratios3 = input.readInt()
+
+    val ratios = (ratios1, ratios2, ratios3)
+
+    MaterialsDefinition(const1, const2, const3, ratios)
+  }
+}
 
 class ClusterClientProtocol(name: String, input: InputStream,
   output: OutputStream) {
@@ -20,7 +38,9 @@ class ClusterClientProtocol(name: String, input: InputStream,
   private val outputWriter = new PrintWriter(output)
 
   def run(): Unit = {
-    recieveInitialData()
+    val alloy = recieveInitialData()
+    a = Some(alloy)
+    b = Some(alloy.mirror())
 
     while (!isClosed) {
       calculateNewTemperatures()
@@ -59,8 +79,9 @@ class ClusterClientProtocol(name: String, input: InputStream,
     ???
   }
 
-  private def recieveInitialData(): Unit = {
-    val materialsDef = recieveMaterialsDefinition()
+  private def recieveInitialData(): Alloy = {
+    val materialsDef = ClusterClientProtocol.recieveMaterialsDefinition(
+      ???)
     val points = recievePointsSection()
     val materials = recieveMaterialsSection()
 
@@ -72,14 +93,11 @@ class ClusterClientProtocol(name: String, input: InputStream,
     val endWidth = width
     val endHeight = height
 
-    val alloy = Alloy(width, height, depth, materialsDef, points, materials,
+    Alloy(width, height, depth, materialsDef, points, materials,
       startWidth, startHeight, endWidth, endHeight)
-
-    a = Some(alloy)
-    b = Some(alloy.mirror())
   }
 
-  private def recieveMaterialsDefinition(): MaterialsDefinition = {
+  /*private def recieveMaterialsDefinition(): MaterialsDefinition = {
     val const1 = inputReader.nextDouble()
     val const2 = inputReader.nextDouble()
     val const3 = inputReader.nextDouble()
@@ -91,7 +109,7 @@ class ClusterClientProtocol(name: String, input: InputStream,
     val ratios = (ratios1, ratios2, ratios3)
 
     MaterialsDefinition(const1, const2, const3, ratios)
-  }
+  }*/
 
   private def recievePointsSection(): Array[Array[Array[Alloy.Point]]] = {
     val width = inputReader.nextInt()
@@ -131,7 +149,8 @@ class ClusterClientProtocol(name: String, input: InputStream,
   }
 
   private def calculateNewTemperatures(): Unit = {
-    ???
+    // TODO(chris): Do this using ForkJoin
+    a.get.calculateNextTemp(b.get)
   }
 
   private def sendNewTemperatures(): Unit = {
