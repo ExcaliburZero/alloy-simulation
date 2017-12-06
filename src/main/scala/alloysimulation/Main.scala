@@ -7,9 +7,15 @@ object Main {
     val iterations = 500//250
     val displayFunction = writeAlloyToFile(_,_)
     val smallThreshold = 16384
-    val isServer = args.length > 0 && args.head == "server"
-    val serverIP = "localhost"
-    val serverPort = 4658
+
+    val (isServer, serverIP, serverPort) = if (args.head == "server") {
+      (true, "localhost", 4658)
+    } else {
+      val ip = args(1)
+      val port = args(2).toInt
+
+      (false, ip, port)
+    }
 
     val width = 256
     val height = 256
