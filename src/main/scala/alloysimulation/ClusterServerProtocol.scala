@@ -30,6 +30,18 @@ object ClusterServerProtocol {
     })
   }
 
+  def sendDataRange(output: OutputStream, range: DataRange): Unit = {
+    withOutput(output, o => {
+      o.writeInt(range.start)
+      o.writeInt(range.end)
+      o.writeInt(range.width)
+      o.writeInt(range.height)
+      o.writeInt(range.depth)
+      o.writeBoolean(range.hasAbove)
+      o.writeBoolean(range.hasBelow)
+    })
+  }
+
   def sendPointsSection(output: OutputStream, range: DataRange,
     points: Alloy.Points): Unit = {
     // TODO(chris): Add handling for borders
@@ -80,7 +92,41 @@ object ClusterServerProtocol {
     })
   }
 
-  private def withOutput[A](output: OutputStream,
+  def recieveNewTemperatures(input: InputStream, range: DataRange,
+    points: Alloy.Points): Unit = {
+    withInput(input, i => {
+      val start = range.start
+      val end = range.end
+
+      val borderAbove = if (range.hasAbove) 1 else 0
+      val borderBelow = if (range.hasBelow) 1 else 0
+
+      val width = end - start + 1 - borderAbove - borderBelow
+      val height = range.height
+      val depth = range.depth
+
+      for (
+        x <- start + borderAbove to end - borderBelow;
+        y <- 0 until height;
+        z <- 0 until depth
+      ) {
+        points(x)(y).update(z, i.readDouble())
+      }
+    })
+  }
+
+  def withInput[A](input: InputStream,
+    function: (DataInputStream => A)): A = {
+    val in = new DataInputStream(input)
+
+    try {
+      function(in)
+    } finally {
+      in.close()
+    }
+  }
+
+  def withOutput[A](output: OutputStream,
     function: (DataOutputStream => A)): A = {
     val out = new DataOutputStream(output)
 
@@ -99,17 +145,11 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
   private var closed: Boolean = false
   private val closedLock = new ReentrantLock()
 
-  private val inputReader = new Scanner(input)
-  private val outputWriter = new PrintWriter(output)
-
-  /*private val objectInput = new ObjectInputStream(input)
-  private val objectOutput = new ObjectOutputStream(output)*/
-
   def start(): Unit = {
     sendInitialData()
 
     while (!isClosed) {
-      recieveNewTemperatures()
+      ClusterServerProtocol.recieveNewTemperatures(input, range, a.points)
 
       waitForOthers()
       if (isDone()) {
@@ -148,13 +188,10 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
   }
 
   private def sendInitialData(): Unit = {
-    ClusterServerProtocol.sendMaterialsDefinition(???, a.materialsDef)
-    ClusterServerProtocol.sendPointsSection(???, range, a.points)
-    ClusterServerProtocol.sendMaterialsSection(???, range, a.materials)
-  }
-
-  private def recieveNewTemperatures(): Unit = {
-    ???
+    ClusterServerProtocol.sendMaterialsDefinition(output, a.materialsDef)
+    ClusterServerProtocol.sendDataRange(output, range)
+    ClusterServerProtocol.sendPointsSection(output, range, a.points)
+    ClusterServerProtocol.sendMaterialsSection(output, range, a.materials)
   }
 
   private def waitForOthers(): Unit = {

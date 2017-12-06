@@ -27,6 +27,20 @@ object ClusterClientProtocol {
     })
   }
 
+  def recieveDataRange(input: InputStream): DataRange = {
+    withInput(input, i => {
+      val start = i.readInt()
+      val end = i.readInt()
+      val width = i.readInt()
+      val height = i.readInt()
+      val depth = i.readInt()
+      val hasAbove = i.readBoolean()
+      val hasBelow = i.readBoolean()
+
+      DataRange(start, end, width, height, depth, hasAbove, hasBelow)
+    })
+  }
+
   def recievePointsSection(input: InputStream): Alloy.Points = {
     withInput(input, i => {
       val width = i.readInt()
@@ -68,17 +82,37 @@ object ClusterClientProtocol {
     })
   }
 
+  def sendNewTemperatures(output: OutputStream, range: DataRange,
+    points: Alloy.Points): Unit = {
+    withOutput(output, o => {
+      val start = range.start
+      val end = range.end
 
+      val borderAbove = if (range.hasAbove) 1 else 0
+      val borderBelow = if (range.hasBelow) 1 else 0
+
+      val width = end - start + 1 - borderAbove - borderBelow
+      val height = range.height
+      val depth = range.depth
+
+      for (
+        x <- start + borderAbove to end - borderBelow;
+        y <- 0 until height;
+        z <- 0 until depth
+      ) {
+        o.writeDouble(points(x)(y)(z))
+      }
+    })
+  }
+
+  private def withOutput[A](output: OutputStream,
+    function: (DataOutputStream => A)): A = {
+    ClusterServerProtocol.withOutput(output, function)
+  }
 
   private def withInput[A](input: InputStream,
     function: (DataInputStream => A)): A = {
-    val in = new DataInputStream(input)
-
-    try {
-      function(in)
-    } finally {
-      in.close()
-    }
+    ClusterServerProtocol.withInput(input, function)
   }
 }
 
@@ -86,6 +120,7 @@ class ClusterClientProtocol(name: String, input: InputStream,
   output: OutputStream) {
   private var a: Option[Alloy] = None
   private var b: Option[Alloy] = None
+  private var range: Option[DataRange] = None
 
   private var closed = false
   private var closedLock = new ReentrantLock()
@@ -94,9 +129,10 @@ class ClusterClientProtocol(name: String, input: InputStream,
   private val outputWriter = new PrintWriter(output)
 
   def run(): Unit = {
-    val alloy = recieveInitialData()
+    val (alloy, dr) = recieveInitialData()
     a = Some(alloy)
     b = Some(alloy.mirror())
+    range = Some(dr)
 
     while (!isClosed) {
       calculateNewTemperatures()
@@ -135,11 +171,12 @@ class ClusterClientProtocol(name: String, input: InputStream,
     ???
   }
 
-  private def recieveInitialData(): Alloy = {
+  private def recieveInitialData(): (Alloy, DataRange) = {
     val materialsDef = ClusterClientProtocol.recieveMaterialsDefinition(
-      ???)
-    val points = ClusterClientProtocol.recievePointsSection(???)
-    val materials = ClusterClientProtocol.recieveMaterialsSection(???)
+     input) 
+    val dataRange = ClusterClientProtocol.recieveDataRange(input)
+    val points = ClusterClientProtocol.recievePointsSection(input)
+    val materials = ClusterClientProtocol.recieveMaterialsSection(input)
 
     val width = points.length
     val height = points(0).length
@@ -149,8 +186,10 @@ class ClusterClientProtocol(name: String, input: InputStream,
     val endWidth = width
     val endHeight = height
 
-    Alloy(width, height, depth, materialsDef, points, materials,
+    val alloy = Alloy(width, height, depth, materialsDef, points, materials,
       startWidth, startHeight, endWidth, endHeight)
+
+    (alloy, dataRange)
   }
 
   private def calculateNewTemperatures(): Unit = {

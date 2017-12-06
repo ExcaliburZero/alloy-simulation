@@ -25,6 +25,17 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     actual shouldBe materialsDef
   }
 
+  it should "be able to send and recieve DataRanges" in {
+    val range = DataRange(0, 2, 3, 2, 1, false, false)
+
+    val (input, output) = getInOut()
+
+    ClusterServerProtocol.sendDataRange(output, range)
+    val actual = ClusterClientProtocol.recieveDataRange(input)
+
+    actual shouldBe range
+  }
+
   it should "be able to send and recieve temperature points" in {
     val range = DataRange(0, 2, 3, 2, 1, false, false)
     val points = Array.ofDim[Alloy.Point](3, 2, 1)
@@ -53,6 +64,29 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     val actual = ClusterClientProtocol.recieveMaterialsSection(input)
 
     actual shouldBe materials
+  }
+
+  it should "be able to send and recieve new temperature values" in {
+    val range = DataRange(0, 2, 3, 2, 1, true, true)
+    val points = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    points(0)(1).update(0, 0.24)
+    points(1)(1).update(0, -2.2)
+    points(2)(0).update(0, -1.34)
+
+    val pointsDestination = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    val (input, output) = getInOut()
+
+    ClusterClientProtocol.sendNewTemperatures(output, range, points)
+    ClusterServerProtocol.recieveNewTemperatures(input, range,
+      pointsDestination)
+
+    // Borders should not be updated
+    points(0)(1).update(0, 0.0)
+    points(2)(0).update(0, 0.0)
+
+    pointsDestination shouldBe points
   }
 
   private def getInOut(): (DataInputStream, OutputStream) = {
