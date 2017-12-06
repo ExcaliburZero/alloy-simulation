@@ -10,6 +10,10 @@ import java.io.PrintWriter
 
 import java.util.Scanner
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Phaser
+import java.util.concurrent.TimeUnit
+
 import org.scalatest.{Assertion, FlatSpec, Matchers}
 
 class ClusterProtocolsTests extends FlatSpec with Matchers {
@@ -122,12 +126,61 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     pointsDestination shouldBe points
   }
 
-  private def getInOut(): (DataInputStream, OutputStream) = {
+  it should "work with a server and client" in {
+    val ratios = (25, 15, 60)
+    val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
+
+    val width = 3
+    val height = 4
+    val depth = 1
+
+    val numGenerations = 10
+    val phaser = new Phaser(1)
+
+    val a = Alloy(width, height, depth, materialsDef)
+    val b = a.mirror()
+
+    val range = DataRange(0, 2, width, height, depth, true, true)
+
+    val (inputA, outputA) = getInOut()
+    val (inputB, outputB) = getInOut()
+
+    val client = new ClusterClientProtocol("rho", inputA, outputB)
+    val server = new ClusterServerProtocol(a, b, numGenerations, range,
+      phaser, inputB, outputA)
+
+    val countdown = new CountDownLatch(2)
+
+    onThread(() => {
+      client.start()
+      countdown.countDown()
+    })
+
+    onThread(() => {
+      server.start()
+      countdown.countDown()
+    })
+
+    countdown.await(1, TimeUnit.SECONDS)
+  }
+
+  private def getInOut(): (DataInputStream, DataOutputStream) = {
     val in = new PipedInputStream()
     val out = new PipedOutputStream(in)
 
-    val scanner = new DataInputStream(in)
+    val dataInput = new DataInputStream(in)
+    val dataOutput = new DataOutputStream(out)
 
-    (scanner, out)
+    (dataInput, dataOutput)
+  }
+
+  private def onThread(function: () => Unit): Unit = {
+    val thread = new Thread {
+      override def run {
+        function()
+      }
+    }
+
+    thread.start()
   }
 }

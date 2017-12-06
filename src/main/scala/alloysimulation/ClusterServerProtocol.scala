@@ -17,7 +17,7 @@ case class DataRange(start: Int, end: Int, width: Int, height: Int,
   depth: Int, hasAbove: Boolean, hasBelow: Boolean)
 
 object ClusterServerProtocol {
-  def sendMaterialsDefinition(output: OutputStream,
+  def sendMaterialsDefinition(output: DataOutputStream,
     matDef: MaterialsDefinition): Unit = {
     withOutput(output, o => {
       o.writeDouble(matDef.const1)
@@ -30,7 +30,7 @@ object ClusterServerProtocol {
     })
   }
 
-  def sendDataRange(output: OutputStream, range: DataRange): Unit = {
+  def sendDataRange(output: DataOutputStream, range: DataRange): Unit = {
     withOutput(output, o => {
       o.writeInt(range.start)
       o.writeInt(range.end)
@@ -42,7 +42,7 @@ object ClusterServerProtocol {
     })
   }
 
-  def sendPointsSection(output: OutputStream, range: DataRange,
+  def sendPointsSection(output: DataOutputStream, range: DataRange,
     points: Alloy.Points): Unit = {
     // TODO(chris): Add handling for borders
     val start = range.start
@@ -67,7 +67,7 @@ object ClusterServerProtocol {
     })
   }
 
-  def sendMaterialsSection(output: OutputStream, range: DataRange,
+  def sendMaterialsSection(output: DataOutputStream, range: DataRange,
     materials: Alloy.Materials): Unit = {
     val start = range.start
     val end = range.end
@@ -92,7 +92,7 @@ object ClusterServerProtocol {
     })
   }
 
-  def recieveNewTemperatures(input: InputStream, range: DataRange,
+  def recieveNewTemperatures(input: DataInputStream, range: DataRange,
     points: Alloy.Points): Unit = {
     val start = range.start
     val end = range.end
@@ -115,13 +115,13 @@ object ClusterServerProtocol {
     })
   }
 
-  def sendIsDone(output: OutputStream, isDone: Boolean): Unit = {
+  def sendIsDone(output: DataOutputStream, isDone: Boolean): Unit = {
     withOutput(output, o => {
       o.writeBoolean(isDone)
     })
   }
 
-  def sendBorderTemperatures(output: OutputStream, range: DataRange,
+  def sendBorderTemperatures(output: DataOutputStream, range: DataRange,
     points: Alloy.Points): Unit = {
     withOutput(output, o => {
       if (range.hasAbove) {
@@ -146,26 +146,23 @@ object ClusterServerProtocol {
     })
   }
 
-  def withInput[A](input: InputStream,
+  def withInput[A](input: DataInputStream,
     function: (DataInputStream => A)): A = {
-    val in = new DataInputStream(input)
-
     try {
-      function(in)
+      function(input)
     } finally {
-      in.close()
+      //input.close()
     }
   }
 
-  def withOutput[A](output: OutputStream,
+  def withOutput[A](output: DataOutputStream,
     function: (DataOutputStream => A)): A = {
-    val out = new DataOutputStream(output)
-
     try {
-      function(out)
+      function(output)
     } finally {
-      out.flush()
-      out.close()
+      output.flush()
+      //out.close()
+      // TODO: Move this
     }
   }
 }
@@ -176,23 +173,31 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
   private var closed: Boolean = false
   private val closedLock = new ReentrantLock()
 
+  private val dataInput = new DataInputStream(input)
+  private val dataOutput = new DataOutputStream(output)
+
   def start(): Unit = {
-    sendInitialData()
+    try {
+      sendInitialData()
 
-    while (!isClosed) {
-      ClusterServerProtocol.recieveNewTemperatures(input, range, a.points)
+      while (!isClosed) {
+        ClusterServerProtocol.recieveNewTemperatures(dataInput, range, a.points)
 
-      waitForOthers()
-      if (isDone()) {
-        ClusterServerProtocol.sendIsDone(output, true)
-        return
-      } else {
-        ClusterServerProtocol.sendIsDone(output, false)
+        waitForOthers()
+        if (isDone()) {
+          ClusterServerProtocol.sendIsDone(dataOutput, true)
+          return
+        } else {
+          ClusterServerProtocol.sendIsDone(dataOutput, false)
+        }
+
+        ClusterServerProtocol.sendBorderTemperatures(dataOutput, range, a.points)
+
+        swapAlloys()
       }
-
-      ClusterServerProtocol.sendBorderTemperatures(output, range, a.points)
-
-      swapAlloys()
+    } finally {
+      dataInput.close()
+      dataOutput.close()
     }
   }
 
@@ -219,10 +224,10 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
   }
 
   private def sendInitialData(): Unit = {
-    ClusterServerProtocol.sendMaterialsDefinition(output, a.materialsDef)
-    ClusterServerProtocol.sendDataRange(output, range)
-    ClusterServerProtocol.sendPointsSection(output, range, a.points)
-    ClusterServerProtocol.sendMaterialsSection(output, range, a.materials)
+    ClusterServerProtocol.sendMaterialsDefinition(dataOutput, a.materialsDef)
+    ClusterServerProtocol.sendDataRange(dataOutput, range)
+    ClusterServerProtocol.sendPointsSection(dataOutput, range, a.points)
+    ClusterServerProtocol.sendMaterialsSection(dataOutput, range, a.materials)
   }
 
   private def waitForOthers(): Unit = {
