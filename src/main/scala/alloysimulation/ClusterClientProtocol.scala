@@ -8,6 +8,7 @@ import java.io.PrintWriter
 
 import java.util.Scanner
 
+import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.locks.ReentrantLock
 
 object ClusterClientProtocol {
@@ -234,8 +235,11 @@ class ClusterClientProtocol(name: String, input: InputStream,
   }
 
   private def calculateNewTemperatures(): Unit = {
-    // TODO(chris): Do this using ForkJoin
-    a.get.calculateNextTemp(b.get)
+    val smallThreshold = 16384
+    val forkJoinPool = new ForkJoinPool()
+    val task = new ForkJoinTask(smallThreshold, a.get, b.get)
+
+    forkJoinPool.invoke(task)
   }
 
   private def swapAlloys(): Unit = {
