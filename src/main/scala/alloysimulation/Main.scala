@@ -8,17 +8,19 @@ object Main {
     val displayFunction = writeAlloyToFile(_,_)
     val smallThreshold = 16384
     val isServer = args.length > 0 && args.head == "server"
+    val serverIP = "localhost"
+    val serverPort = 4658
 
-    val width = 256 * 2
-    val height = 256 * 2
+    val width = 256
+    val height = 256
 
     val strategy: Strategy =
       //new SingleThreadStrategy(width, height, 1, materialsDef, iterations,
       //  displayFunction)
-      new ForkJoinStrategy(width, height, 1, materialsDef, iterations,
-        displayFunction, smallThreshold)
-      //new ClusterStrategy(width, height, 1, materialsDef, iterations,
-      //  displayFunction, isServer)
+      //new ForkJoinStrategy(width, height, 1, materialsDef, iterations,
+      //  displayFunction, smallThreshold)
+      new ClusterStrategy(width, height, 1, materialsDef, iterations,
+        displayFunction, isServer, serverIP, serverPort)
 
     strategy.run()
   }
