@@ -84,17 +84,17 @@ object ClusterClientProtocol {
 
   def sendNewTemperatures(output: OutputStream, range: DataRange,
     points: Alloy.Points): Unit = {
+    val start = range.start
+    val end = range.end
+
+    val borderAbove = if (range.hasAbove) 1 else 0
+    val borderBelow = if (range.hasBelow) 1 else 0
+
+    val width = end - start + 1 - borderAbove - borderBelow
+    val height = range.height
+    val depth = range.depth
+
     withOutput(output, o => {
-      val start = range.start
-      val end = range.end
-
-      val borderAbove = if (range.hasAbove) 1 else 0
-      val borderBelow = if (range.hasBelow) 1 else 0
-
-      val width = end - start + 1 - borderAbove - borderBelow
-      val height = range.height
-      val depth = range.depth
-
       for (
         x <- start + borderAbove to end - borderBelow;
         y <- 0 until height;
@@ -108,6 +108,31 @@ object ClusterClientProtocol {
   def recieveIsDone(input: InputStream): Boolean = {
     withInput(input, i => {
       i.readBoolean()
+    })
+  }
+
+  def recieveBorderTemperatures(input: InputStream, range: DataRange,
+    points: Alloy.Points): Unit = {
+    withInput(input, i => {
+      if (range.hasAbove) {
+        val x = range.start
+        for (
+          y <- 0 until range.height;
+          z <- 0 until range.depth
+        ) {
+          points(x)(y).update(z, i.readDouble())
+        }
+      }
+
+      if (range.hasBelow) {
+        val x = range.end
+        for (
+          y <- 0 until range.height;
+          z <- 0 until range.depth
+        ) {
+          points(x)(y).update(z, i.readDouble())
+        }
+      }
     })
   }
 
@@ -149,8 +174,8 @@ class ClusterClientProtocol(name: String, input: InputStream,
         return
       }
 
-      waitForBorderTemperatures()
-      storeBorderTemperatures()
+      ClusterClientProtocol.recieveBorderTemperatures(input, range.get,
+        a.get.points)
 
       swapAlloys()
     }
@@ -198,14 +223,6 @@ class ClusterClientProtocol(name: String, input: InputStream,
   private def calculateNewTemperatures(): Unit = {
     // TODO(chris): Do this using ForkJoin
     a.get.calculateNextTemp(b.get)
-  }
-
-  private def waitForBorderTemperatures(): Unit = {
-    ???
-  }
-
-  private def storeBorderTemperatures(): Unit = {
-    ???
   }
 
   private def swapAlloys(): Unit = {

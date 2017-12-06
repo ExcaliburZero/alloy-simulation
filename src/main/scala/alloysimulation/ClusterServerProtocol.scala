@@ -94,17 +94,17 @@ object ClusterServerProtocol {
 
   def recieveNewTemperatures(input: InputStream, range: DataRange,
     points: Alloy.Points): Unit = {
+    val start = range.start
+    val end = range.end
+
+    val borderAbove = if (range.hasAbove) 1 else 0
+    val borderBelow = if (range.hasBelow) 1 else 0
+
+    val width = end - start + 1 - borderAbove - borderBelow
+    val height = range.height
+    val depth = range.depth
+
     withInput(input, i => {
-      val start = range.start
-      val end = range.end
-
-      val borderAbove = if (range.hasAbove) 1 else 0
-      val borderBelow = if (range.hasBelow) 1 else 0
-
-      val width = end - start + 1 - borderAbove - borderBelow
-      val height = range.height
-      val depth = range.depth
-
       for (
         x <- start + borderAbove to end - borderBelow;
         y <- 0 until height;
@@ -118,6 +118,31 @@ object ClusterServerProtocol {
   def sendIsDone(output: OutputStream, isDone: Boolean): Unit = {
     withOutput(output, o => {
       o.writeBoolean(isDone)
+    })
+  }
+
+  def sendBorderTemperatures(output: OutputStream, range: DataRange,
+    points: Alloy.Points): Unit = {
+    withOutput(output, o => {
+      if (range.hasAbove) {
+        val x = range.start
+        for (
+          y <- 0 until range.height;
+          z <- 0 until range.depth
+        ) {
+          o.writeDouble(points(x)(y)(z))
+        }
+      }
+
+      if (range.hasBelow) {
+        val x = range.end
+        for (
+          y <- 0 until range.height;
+          z <- 0 until range.depth
+        ) {
+          o.writeDouble(points(x)(y)(z))
+        }
+      }
     })
   }
 
@@ -159,13 +184,13 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
 
       waitForOthers()
       if (isDone()) {
-        sendDoneMessage()
+        ClusterServerProtocol.sendIsDone(output, true)
         return
       } else {
-        sendContinueMessage()
+        ClusterServerProtocol.sendIsDone(output, false)
       }
 
-      sendBorderTemperatures()
+      ClusterServerProtocol.sendBorderTemperatures(output, range, a.points)
 
       swapAlloys()
     }
@@ -202,18 +227,6 @@ class ClusterServerProtocol(private var a: Alloy, private var b: Alloy,
 
   private def waitForOthers(): Unit = {
     phaser.arriveAndAwaitAdvance()
-  }
-
-  private def sendDoneMessage(): Unit = {
-    ???
-  }
-
-  private def sendContinueMessage(): Unit = {
-    ???
-  }
-
-  private def sendBorderTemperatures(): Unit = {
-    ???
   }
 
   private def swapAlloys(): Unit = {
