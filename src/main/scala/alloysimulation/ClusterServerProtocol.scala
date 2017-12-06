@@ -115,6 +115,12 @@ object ClusterServerProtocol {
     })
   }
 
+  def sendIsDone(output: OutputStream, isDone: Boolean): Unit = {
+    withOutput(output, o => {
+      o.writeBoolean(isDone)
+    })
+  }
+
   def withInput[A](input: InputStream,
     function: (DataInputStream => A)): A = {
     val in = new DataInputStream(input)

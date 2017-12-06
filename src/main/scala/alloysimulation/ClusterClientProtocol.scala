@@ -105,6 +105,12 @@ object ClusterClientProtocol {
     })
   }
 
+  def recieveIsDone(input: InputStream): Boolean = {
+    withInput(input, i => {
+      i.readBoolean()
+    })
+  }
+
   private def withOutput[A](output: OutputStream,
     function: (DataOutputStream => A)): A = {
     ClusterServerProtocol.withOutput(output, function)
@@ -136,9 +142,10 @@ class ClusterClientProtocol(name: String, input: InputStream,
 
     while (!isClosed) {
       calculateNewTemperatures()
-      sendNewTemperatures()
+      ClusterClientProtocol.sendNewTemperatures(output, range.get,
+        a.get.points)
 
-      if (isDone()) {
+      if (ClusterClientProtocol.recieveIsDone(input)) {
         return
       }
 
@@ -167,10 +174,6 @@ class ClusterClientProtocol(name: String, input: InputStream,
     }
   }
 
-  private def isDone(): Boolean = {
-    ???
-  }
-
   private def recieveInitialData(): (Alloy, DataRange) = {
     val materialsDef = ClusterClientProtocol.recieveMaterialsDefinition(
      input) 
@@ -195,10 +198,6 @@ class ClusterClientProtocol(name: String, input: InputStream,
   private def calculateNewTemperatures(): Unit = {
     // TODO(chris): Do this using ForkJoin
     a.get.calculateNextTemp(b.get)
-  }
-
-  private def sendNewTemperatures(): Unit = {
-    ???
   }
 
   private def waitForBorderTemperatures(): Unit = {

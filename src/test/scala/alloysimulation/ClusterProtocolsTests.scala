@@ -89,6 +89,17 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     pointsDestination shouldBe points
   }
 
+  it should "be able to send done or continue messages" in {
+    val (input, output) = getInOut()
+
+    val expected = true
+
+    ClusterServerProtocol.sendIsDone(output, expected)
+    val actual = ClusterClientProtocol.recieveIsDone(input)
+
+    actual shouldBe expected
+  }
+
   private def getInOut(): (DataInputStream, OutputStream) = {
     val in = new PipedInputStream()
     val out = new PipedOutputStream(in)
