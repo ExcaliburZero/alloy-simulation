@@ -11,11 +11,13 @@ import java.util.concurrent.Phaser
 
 import collection.mutable.HashMap
 
+import sys.process._
+
 class ClusterStrategy(width: Int, height: Int, depth: Int,
   materialsDef: MaterialsDefinition, iterations: Int,
   displayFunction: Alloy.DisplayFunction, isServer: Boolean,
   serverIP: String, serverPort: Int, clients: Alloy => HashMap[String,DataRange],
-  thisName: String) extends Strategy {
+  thisName: String, keyFile: Option[String]) extends Strategy {
 
   val a = Alloy(width, height, depth, materialsDef)
   val b = a.mirror()
@@ -59,6 +61,8 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
       try {
         println(f"Started server: $serverIP:$serverPort")
 
+        remoteExecuteClients()
+
         for (_ <- 0 until clientsRanges.size) {
           val clientSocket = serverSocket.accept()
           onThread(() => {
@@ -100,7 +104,7 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
     protocol.start()
   }
 
-  private def onThread(function: () => Unit): Unit = {
+  private def onThread[A](function: () => A): Unit = {
     val thread = new Thread {
       override def run {
         function()
@@ -108,5 +112,20 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
     }
 
     thread.start()
+  }
+
+  private def remoteExecuteClients(): Unit = {
+    val key = keyFile.get
+    for ((c, _) <- clientsRanges) {
+      onThread(() => {
+        //val clientCommand = f"screen -d -m java -jar alloysimulation.jar client $serverIP $serverPort $c"
+        val clientCommand = f"java -jar alloysimulation.jar client $serverIP $serverPort $c"
+        val sshCommand = f"ssh -i $key $c $clientCommand"
+
+        println(sshCommand)
+        sshCommand !
+      })
+    }
+    println("Finished executing clients")
   }
 }

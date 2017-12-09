@@ -9,23 +9,23 @@ object Main {
   def main(args: Array[String]): Unit = {
     val ratios = (33, 33, 33)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val iterations = 500//250
+    val iterations = 100//250
     val smallThreshold = 16384
 
     val clients = getClients("clients.csv")
 
-    val (isServer, serverIP, serverPort, thisName) = if (args.head == "server") {
-      (true, "localhost", 4658, "localhost")
+    val (isServer, serverIP, serverPort, thisName, keyFile) = if (args.head == "server") {
+      (true, args(1), 4658, "localhost", Some(args(2)))
     } else {
       val ip = args(1)
       val port = args(2).toInt
       val name = args(3)
 
-      (false, ip, port, name)
+      (false, ip, port, name, None)
     }
 
-    val width = 1024 * 1
-    val height = 1024 * 1
+    val width = 1024 * 4
+    val height = 1024 * 4
 
     val writeImage = false
 
@@ -41,7 +41,8 @@ object Main {
       //new ForkJoinStrategy(width, height, 1, materialsDef, iterations,
       //  displayFunction, smallThreshold)
       new ClusterStrategy(width, height, 1, materialsDef, iterations,
-        displayFunction, isServer, serverIP, serverPort, clients, thisName)
+        displayFunction, isServer, serverIP, serverPort, clients, thisName,
+        keyFile)
 
     strategy.run()
   }
