@@ -73,6 +73,7 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
   }
 
   private def client(): Unit = {
+    println(f"Attempting to connect to: $serverIP:$serverPort")
     val socket = new Socket(serverIP, serverPort)
 
     println("Connected to server")

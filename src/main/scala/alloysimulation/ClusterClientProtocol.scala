@@ -160,6 +160,8 @@ class ClusterClientProtocol(name: String, input: InputStream,
   private val dataInput = new DataInputStream(input)
   private val dataOutput = new DataOutputStream(output)
 
+  private val forkJoinPool = new ForkJoinPool()
+
   def start(): Unit = {
     try {
       println("Watiting for Initial Data")
@@ -215,7 +217,7 @@ class ClusterClientProtocol(name: String, input: InputStream,
 
   private def recieveInitialData(): (Alloy, DataRange) = {
     val materialsDef = ClusterClientProtocol.recieveMaterialsDefinition(
-     dataInput) 
+     dataInput)
     val dataRange = ClusterClientProtocol.recieveDataRange(dataInput)
     val points = ClusterClientProtocol.recievePointsSection(dataInput)
     val materials = ClusterClientProtocol.recieveMaterialsSection(dataInput)
@@ -236,8 +238,7 @@ class ClusterClientProtocol(name: String, input: InputStream,
 
   private def calculateNewTemperatures(): Unit = {
     val smallThreshold = 16384
-    val forkJoinPool = new ForkJoinPool()
-    val task = new ForkJoinTask(smallThreshold, a.get, b.get)
+    val task = new CustomTask(smallThreshold, a.get, b.get)
 
     forkJoinPool.invoke(task)
   }

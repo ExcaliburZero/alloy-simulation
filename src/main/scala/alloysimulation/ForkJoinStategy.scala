@@ -1,6 +1,7 @@
 package alloysimulation
 
 import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.ForkJoinTask
 import java.util.concurrent.RecursiveTask
 
 class ForkJoinStrategy(width: Int, height: Int, depth: Int,
@@ -8,11 +9,13 @@ class ForkJoinStrategy(width: Int, height: Int, depth: Int,
   displayFunction: Alloy.DisplayFunction,
   smallThreshold: Int) extends Strategy {
 
-  val alloy = Alloy(width, height, depth, materialsDef)
-  val alloy2 = alloy.mirror()
+  private val alloy = Alloy(width, height, depth, materialsDef)
+  private val alloy2 = alloy.mirror()
 
   stampPattern(alloy)
   stampDots(alloy)
+
+  private val forkJoinPool = new ForkJoinPool(Runtime.getRuntime.availableProcessors())
 
   def run(): Unit = {
     for (i <- 0 until iterations) {
@@ -24,15 +27,14 @@ class ForkJoinStrategy(width: Int, height: Int, depth: Int,
 
       displayFunction(a, i)
 
-      val forkJoinPool = new ForkJoinPool()
-      val task = new ForkJoinTask(smallThreshold, a, b)
+      val task = new CustomTask(smallThreshold, a, b)
 
       forkJoinPool.invoke(task)
     }
   }
 }
 
-class ForkJoinTask(smallThreshold: Int, a: Alloy, b: Alloy) extends RecursiveTask[Unit] {
+class CustomTask(smallThreshold: Int, a: Alloy, b: Alloy) extends RecursiveTask[Unit] {
   val workLoad = a.getWorkLoad()
 
   override protected def compute(): Unit = {
@@ -52,10 +54,13 @@ class ForkJoinTask(smallThreshold: Int, a: Alloy, b: Alloy) extends RecursiveTas
     val newBs = b.split()
 
     val subtasks = List(
-      new ForkJoinTask(smallThreshold, newAs(0), newBs(0)),
-      new ForkJoinTask(smallThreshold, newAs(1), newBs(1))
+      new CustomTask(smallThreshold, newAs(0), newBs(0)),
+      new CustomTask(smallThreshold, newAs(1), newBs(1))
     )
 
+    ForkJoinTask.invokeAll(subtasks.head, subtasks(1))
+
+    /*
     for(subtask <- subtasks) {
       subtask.fork()
     }
@@ -63,5 +68,6 @@ class ForkJoinTask(smallThreshold: Int, a: Alloy, b: Alloy) extends RecursiveTas
     for(subtask <- subtasks) {
       subtask.join()
     }
+    */
   }
 }
