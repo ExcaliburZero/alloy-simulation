@@ -9,16 +9,25 @@ import java.net.Socket
 
 import java.util.concurrent.Phaser
 
+import collection.mutable.HashMap
+
 class ClusterStrategy(width: Int, height: Int, depth: Int,
   materialsDef: MaterialsDefinition, iterations: Int,
   displayFunction: Alloy.DisplayFunction, isServer: Boolean,
-  serverIP: String, serverPort: Int) extends Strategy {
+  serverIP: String, serverPort: Int, clients: Alloy => HashMap[String,DataRange],
+  thisName: String) extends Strategy {
 
   val a = Alloy(width, height, depth, materialsDef)
   val b = a.mirror()
 
   stampPattern(a)
   stampDots(a)
+
+  val clientsRanges = clients(a)
+
+  for ((k,v) <- clientsRanges) {
+    println(f"$k => $v")
+  }
 
   def run(): Unit = {
     if (isServer) {
@@ -30,7 +39,7 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
 
   private def server(): Unit = {
     try {
-      val phaser = new Phaser(1 + 1)
+      val phaser = new Phaser(clientsRanges.size + 1)
 
       onThread(() => {
         for (i <- 0 until iterations) {
@@ -50,20 +59,24 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
       try {
         println(f"Started server: $serverIP:$serverPort")
 
-        // TODO(chris): Do for all child machines on separate threads
-        //onThread(() => {
+        for (_ <- 0 until clientsRanges.size) {
           val clientSocket = serverSocket.accept()
+          onThread(() => {
+            val input = new DataInputStream(clientSocket.getInputStream())
+            val output = new DataOutputStream(clientSocket.getOutputStream())
 
-          println("Got client")
+            val clientName = input.readUTF()
 
-          val input = new DataInputStream(clientSocket.getInputStream())
-          val output = new DataOutputStream(clientSocket.getOutputStream())
+            println(f"Got client: $clientName")
 
-          val range = DataRange(0, width - 1, width, height, depth, false, false)
-          val protocol = new ClusterServerProtocol(a, b, iterations, range, phaser,
-            input, output)
-          protocol.start()
-        //})
+            val range = clientsRanges(clientName)
+
+            //val range = DataRange(0, width - 1, width, height, depth, false, false)
+            val protocol = new ClusterServerProtocol(a, b, iterations, range, phaser,
+              input, output)
+            protocol.start()
+          })
+        }
       } finally {
         serverSocket.close()
       }
@@ -80,6 +93,8 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
 
     val input = new DataInputStream(socket.getInputStream())
     val output = new DataOutputStream(socket.getOutputStream())
+
+    output.writeUTF(thisName)
 
     val protocol = new ClusterClientProtocol("rho", input, output)
     protocol.start()

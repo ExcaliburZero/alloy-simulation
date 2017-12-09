@@ -97,7 +97,7 @@ object ClusterClientProtocol {
 
     withOutput(output, o => {
       for (
-        x <- start + borderAbove to end - borderBelow;
+        x <- borderAbove to (end - start) - borderBelow;
         y <- 0 until height;
         z <- 0 until depth
       ) {
@@ -121,7 +121,7 @@ object ClusterClientProtocol {
           y <- 0 until range.height;
           z <- 0 until range.depth
         ) {
-          points(x)(y).update(z, i.readDouble())
+          points(0)(y).update(z, i.readDouble())
         }
       }
 
@@ -131,7 +131,7 @@ object ClusterClientProtocol {
           y <- 0 until range.height;
           z <- 0 until range.depth
         ) {
-          points(x)(y).update(z, i.readDouble())
+          points(range.end - range.start)(y).update(z, i.readDouble())
         }
       }
     })
@@ -169,6 +169,8 @@ class ClusterClientProtocol(name: String, input: InputStream,
       a = Some(alloy)
       b = Some(alloy.mirror())
       range = Some(dr)
+
+      println(range)
 
       println("Recieved Initial Data")
 
