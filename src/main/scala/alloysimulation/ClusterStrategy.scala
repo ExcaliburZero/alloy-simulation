@@ -119,7 +119,8 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
     for ((c, _) <- clientsRanges) {
       onThread(() => {
         //val clientCommand = f"screen -d -m java -jar alloysimulation.jar client $serverIP $serverPort $c"
-        val clientCommand = f"java -jar alloysimulation.jar client $serverIP $serverPort $c"
+        val javaCommand = "/home/dl/jdk/jdk9/bin/java"
+        val clientCommand = f"$javaCommand -jar alloysimulation.jar client $serverIP $serverPort $c"
         val sshCommand = f"ssh -i $key $c $clientCommand"
 
         println(sshCommand)

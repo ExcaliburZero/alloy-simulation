@@ -24,8 +24,8 @@ object Main {
       (false, ip, port, name, None)
     }
 
-    val width = 1024 * 4
-    val height = 1024 * 4
+    val width = 1024 * 3
+    val height = 1024 * 3
 
     val writeImage = false
 
@@ -90,11 +90,11 @@ object Main {
 
         val end = if (i == clients.size -1) {
           //(j + 1) * per - 1 + (width - (j + 1) * per)
-          val before = start + (i + 1) * clients(i)._2 * per
+          val before = start + clients(i)._2 * per
 
           before + (width - before - 1)
         } else {
-          start + (i + 1) * clients(i)._2 * per
+          start + clients(i)._2 * per
           //((i + 1) * clients(i + 1)._2 + 1) * per - 1
         }
 
