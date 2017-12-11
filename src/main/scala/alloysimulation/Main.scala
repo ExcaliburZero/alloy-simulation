@@ -9,25 +9,14 @@ object Main {
   def main(args: Array[String]): Unit = {
     val ratios = (33, 33, 33)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val iterations = 100//250
-    val smallThreshold = 16384
+    val iterations = 100
 
-    val clients = getClients("clients.csv")
-
-    val (isServer, serverIP, serverPort, thisName, keyFile) = if (args.head == "server") {
-      (true, args(1), 4658, "localhost", Some(args(2)))
-    } else {
-      val ip = args(1)
-      val port = args(2).toInt
-      val name = args(3)
-
-      (false, ip, port, name, None)
-    }
-
-    val width = 1024 * 3
-    val height = 1024 * 3
+    val width = 1024
+    val height = 1024
+    val depth = 1
 
     val writeImage = false
+    val strategyType: StrategyType = Cluster()
 
     val displayFunction = if (writeImage) {
       writeAlloyToFile(_,_)
@@ -35,14 +24,40 @@ object Main {
       (_: Alloy, gen: Alloy.Generation) => println(gen)
     }
 
-    val strategy: Strategy =
-      //new SingleThreadStrategy(width, height, 1, materialsDef, iterations,
-      //  displayFunction)
-      //new ForkJoinStrategy(width, height, 1, materialsDef, iterations,
-      //  displayFunction, smallThreshold)
-      new ClusterStrategy(width, height, 1, materialsDef, iterations,
-        displayFunction, isServer, serverIP, serverPort, clients, thisName,
-        keyFile)
+    val strategy: Strategy = strategyType match {
+      case SingleCore() =>
+        new SingleThreadStrategy(width, height, depth, materialsDef,
+          iterations, displayFunction)
+
+      case ForkJoin() =>
+        val smallThreshold = 16384
+
+        new ForkJoinStrategy(width, height, depth, materialsDef, iterations,
+          displayFunction, smallThreshold)
+
+      case Cluster() =>
+        val (isServer, serverIP, serverPort, thisName, keyFile, clientsFile) =
+          if (args.head == "server") {
+            val ip = args(1)
+            val port = args(2).toInt
+            val key = Some(args(3))
+            val clientsFile = args(4)
+
+            (true, ip, port, "localhost", key, Some(clientsFile))
+          } else {
+            val ip = args(1)
+            val port = args(2).toInt
+            val name = args(3)
+
+            (false, ip, port, name, None, None)
+          }
+
+        val clients = clientsFile.map(getClients)
+
+        new ClusterStrategy(width, height, depth, materialsDef, iterations,
+          displayFunction, isServer, serverIP, serverPort, clients, thisName,
+          keyFile)
+    }
 
     strategy.run()
   }
@@ -79,27 +94,13 @@ object Main {
       val clientsRanges = new HashMap[String, DataRange]()
       var start = 0
       for (i <- 0 until clients.size) {
-        //val j = i * clients(i)._2
-        
-
-        /*val start = if (i == 0) {
-          j * per
-        } else {
-          j * per - 1
-        }*/
-
         val end = if (i == clients.size -1) {
-          //(j + 1) * per - 1 + (width - (j + 1) * per)
           val before = start + clients(i)._2 * per
 
           before + (width - before - 1)
         } else {
           start + clients(i)._2 * per
-          //((i + 1) * clients(i + 1)._2 + 1) * per - 1
         }
-
-        //val end = (j + 1) * per - 1 + (if (i == clients.size - 1)
-        //  width - (j + 1) * per else 0)
 
         val hasAbove = i > 0
         val hasBelow = i < clients.size - 1

@@ -16,7 +16,8 @@ import sys.process._
 class ClusterStrategy(width: Int, height: Int, depth: Int,
   materialsDef: MaterialsDefinition, iterations: Int,
   displayFunction: Alloy.DisplayFunction, isServer: Boolean,
-  serverIP: String, serverPort: Int, clients: Alloy => HashMap[String,DataRange],
+  serverIP: String, serverPort: Int,
+  clients: Option[Alloy => HashMap[String,DataRange]],
   thisName: String, keyFile: Option[String]) extends Strategy {
 
   val a = Alloy(width, height, depth, materialsDef)
@@ -25,11 +26,9 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
   stampPattern(a)
   stampDots(a)
 
-  val clientsRanges = clients(a)
+  val clientsRanges = clients.map(f => f(a))
 
-  for ((k,v) <- clientsRanges) {
-    println(f"$k => $v")
-  }
+  printClientRanges()
 
   def run(): Unit = {
     if (isServer) {
@@ -40,53 +39,58 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
   }
 
   private def server(): Unit = {
+    val numClients = clientsRanges.get.size
+
+    val phaser = new Phaser(numClients + 1)
+
+    onThread(() => {
+      handleAlloyDisplaying(phaser)
+    })
+
+    val serverSocket = new ServerSocket(serverPort)
+
     try {
-      val phaser = new Phaser(clientsRanges.size + 1)
+      println(f"Started server: $serverIP:$serverPort")
 
-      onThread(() => {
-        for (i <- 0 until iterations) {
-          phaser.arriveAndAwaitAdvance()
-          val alloy = if (i % 2 == 0) {
-            a
-          } else {
-            b
-          }
+      remoteExecuteClients()
 
-          displayFunction(alloy, i)
-        }
-      })
-
-      val serverSocket = new ServerSocket(serverPort)
-
-      try {
-        println(f"Started server: $serverIP:$serverPort")
-
-        remoteExecuteClients()
-
-        for (_ <- 0 until clientsRanges.size) {
-          val clientSocket = serverSocket.accept()
-          onThread(() => {
-            val input = new DataInputStream(clientSocket.getInputStream())
-            val output = new DataOutputStream(clientSocket.getOutputStream())
-
-            val clientName = input.readUTF()
-
-            println(f"Got client: $clientName")
-
-            val range = clientsRanges(clientName)
-
-            //val range = DataRange(0, width - 1, width, height, depth, false, false)
-            val protocol = new ClusterServerProtocol(a, b, iterations, range, phaser,
-              input, output)
-            protocol.start()
-          })
-        }
-      } finally {
-        serverSocket.close()
+      for (_ <- 0 until numClients) {
+        val clientSocket = serverSocket.accept()
+        onThread(() => {
+          handleClient(clientSocket, phaser)
+        })
       }
-    } catch {
-      case e: IOException => e.printStackTrace()
+    } finally {
+      serverSocket.close()
     }
+  }
+
+  private def handleAlloyDisplaying(phaser: Phaser): Unit = {
+    for (i <- 0 until iterations) {
+      phaser.arriveAndAwaitAdvance()
+      val alloy = if (i % 2 == 0) {
+        a
+      } else {
+        b
+      }
+
+      displayFunction(alloy, i)
+    }
+  }
+
+  private def handleClient(clientSocket: Socket, phaser: Phaser): Unit = {
+    val input = new DataInputStream(clientSocket.getInputStream())
+    val output = new DataOutputStream(clientSocket.getOutputStream())
+
+    val clientName = input.readUTF()
+
+    println(f"Got client: $clientName")
+
+    val range = (clientsRanges.get)(clientName)
+
+    val protocol = new ClusterServerProtocol(a, b, iterations, range, phaser,
+      input, output)
+    protocol.start()
   }
 
   private def client(): Unit = {
@@ -116,17 +120,28 @@ class ClusterStrategy(width: Int, height: Int, depth: Int,
 
   private def remoteExecuteClients(): Unit = {
     val key = keyFile.get
-    for ((c, _) <- clientsRanges) {
+    for ((c, _) <- clientsRanges.get) {
       onThread(() => {
-        //val clientCommand = f"screen -d -m java -jar alloysimulation.jar client $serverIP $serverPort $c"
-        val javaCommand = "/home/dl/jdk/jdk9/bin/java"
-        val clientCommand = f"$javaCommand -jar alloysimulation.jar client $serverIP $serverPort $c"
-        val sshCommand = f"ssh -i $key $c $clientCommand"
-
-        println(sshCommand)
-        sshCommand !
+        startClientViaSsh(key, c)
       })
     }
     println("Finished executing clients")
+  }
+
+  private def startClientViaSsh(key: String, client: String): Unit = {
+    val javaCommand = "/home/dl/jdk/jdk9/bin/java"
+    val clientCommand = f"$javaCommand -jar alloysimulation.jar client $serverIP $serverPort $client"
+    val sshCommand = f"ssh -i $key $client $clientCommand"
+
+    println(sshCommand)
+    sshCommand !
+  }
+
+  private def printClientRanges(): Unit = {
+    clientsRanges.map(cr =>{
+      for ((k,v) <- cr) {
+        println(f"$k => $v")
+      }
+    })
   }
 }
