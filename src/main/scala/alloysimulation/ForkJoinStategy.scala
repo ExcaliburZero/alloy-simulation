@@ -4,16 +4,11 @@ import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
 import java.util.concurrent.RecursiveTask
 
-class ForkJoinStrategy(width: Int, height: Int, depth: Int,
-  materialsDef: MaterialsDefinition, iterations: Int,
+class ForkJoinStrategy(alloy: Alloy, iterations: Int,
   displayFunction: Alloy.DisplayFunction,
   smallThreshold: Int) extends Strategy {
 
-  private val alloy = Alloy(width, height, depth, materialsDef)
   private val alloy2 = alloy.mirror()
-
-  stampPattern(alloy)
-  stampDots(alloy)
 
   private val forkJoinPool = new ForkJoinPool(Runtime.getRuntime.availableProcessors())
 

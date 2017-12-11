@@ -13,18 +13,13 @@ import collection.mutable.HashMap
 
 import sys.process._
 
-class ClusterStrategy(width: Int, height: Int, depth: Int,
-  materialsDef: MaterialsDefinition, iterations: Int,
+class ClusterStrategy(a: Alloy, iterations: Int,
   displayFunction: Alloy.DisplayFunction, isServer: Boolean,
   serverIP: String, serverPort: Int,
   clients: Option[Alloy => HashMap[String,DataRange]],
   thisName: String, keyFile: Option[String]) extends Strategy {
 
-  val a = Alloy(width, height, depth, materialsDef)
   val b = a.mirror()
-
-  stampPattern(a)
-  stampDots(a)
 
   val clientsRanges = clients.map(f => f(a))
 

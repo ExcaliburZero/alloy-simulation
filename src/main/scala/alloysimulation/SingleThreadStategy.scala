@@ -1,14 +1,9 @@
 package alloysimulation
 
-class SingleThreadStrategy(width: Int, height: Int, depth: Int,
-  materialsDef: MaterialsDefinition, iterations: Int,
+class SingleThreadStrategy(alloy: Alloy, iterations: Int,
   displayFunction: Alloy.DisplayFunction) extends Strategy {
 
-  val alloy = Alloy(width, height, depth, materialsDef)
   val alloy2 = alloy.mirror()
-
-  alloy.update(0, 0, 0, 1000000)
-  alloy.update(width - 1, height - 1, 0, 1000000)
 
   def run(): Unit = {
     for (i <- 0 until iterations) {
@@ -20,9 +15,6 @@ class SingleThreadStrategy(width: Int, height: Int, depth: Int,
 
       displayFunction(a, i)
       a.calculateNextTemp(b)
-
-      alloy.update(0, 0, 0, 1000000)
-      alloy.update(width - 1, height - 1, 0, 1000000)
     }
   }
 }

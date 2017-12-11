@@ -9,8 +9,13 @@ class SingleThreadStrategyTests extends FlatSpec with Matchers {
     val iterations = 50
     val displayFunction = (_: Alloy, _: Int) => ()
 
-    val strategy = new SingleThreadStrategy(5, 8,10, materialsDef,
-      iterations, displayFunction)
+    val width = 10
+    val height = 5
+    val depth = 1
+
+    val alloy = Alloy(width, height, depth, materialsDef)
+
+    val strategy = new SingleThreadStrategy(alloy, iterations, displayFunction)
   }
 
   it should "be able to run" in {
@@ -19,8 +24,13 @@ class SingleThreadStrategyTests extends FlatSpec with Matchers {
     val iterations = 50
     val displayFunction = (_: Alloy, _: Int) => ()
 
-    val strategy = new SingleThreadStrategy(5, 8,10, materialsDef,
-      iterations, displayFunction)
+    val width = 10
+    val height = 5
+    val depth = 1
+
+    val alloy = Alloy(width, height, depth, materialsDef)
+
+    val strategy = new SingleThreadStrategy(alloy, iterations, displayFunction)
 
     strategy.run()
   }

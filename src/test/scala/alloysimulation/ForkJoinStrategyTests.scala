@@ -10,8 +10,14 @@ class ForkJoinStrategyTests extends FlatSpec with Matchers {
     val displayFunction = (_: Alloy, _: Int) => ()
     val smallThreshold = 100
 
-    val strategy = new ForkJoinStrategy(5, 8,10, materialsDef,
-      iterations, displayFunction, smallThreshold)
+    val width = 10
+    val height = 5
+    val depth = 1
+
+    val alloy = Alloy(width, height, depth, materialsDef)
+
+    val strategy = new ForkJoinStrategy(alloy, iterations, displayFunction,
+      smallThreshold)
   }
 
   it should "be able to run" in {
@@ -21,8 +27,14 @@ class ForkJoinStrategyTests extends FlatSpec with Matchers {
     val displayFunction = (_: Alloy, _: Int) => ()
     val smallThreshold = 100
 
-    val strategy = new ForkJoinStrategy(5, 8,10, materialsDef,
-      iterations, displayFunction, smallThreshold)
+    val width = 40
+    val height = 20
+    val depth = 1
+
+    val alloy = Alloy(width, height, depth, materialsDef)
+
+    val strategy = new ForkJoinStrategy(alloy, iterations, displayFunction,
+      smallThreshold)
 
     strategy.run()
   }
