@@ -299,7 +299,7 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     val materialsDef = new MaterialsDefinition(1.0, 1.0, 1.0, ratios)
 
     val width = 8
-    val height = 8
+    val height = 2
     val depth = 1
 
     val numGenerations = 20

@@ -116,12 +116,12 @@ object ClusterClientProtocol {
     points: Alloy.Points): Unit = {
     withInput(input, i => {
       if (range.hasAbove) {
-        val x = range.start
+        val x = 0
         for (
           y <- 0 until range.height;
           z <- 0 until range.depth
         ) {
-          points(0)(y).update(z, i.readDouble())
+          points(x)(y).update(z, i.readDouble())
         }
       }
 
@@ -179,7 +179,7 @@ class ClusterClientProtocol(name: String, input: InputStream,
         }
 
         ClusterClientProtocol.recieveBorderTemperatures(dataInput, range.get,
-          a.get.points)
+          b.get.points)
 
         swapAlloys()
       }

@@ -147,11 +147,7 @@ object ClusterServerProtocol {
 
   def withInput[A](input: DataInputStream,
     function: (DataInputStream => A)): A = {
-    try {
-      function(input)
-    } finally {
-      //input.close()
-    }
+    function(input)
   }
 
   def withOutput[A](output: DataOutputStream,
@@ -160,8 +156,6 @@ object ClusterServerProtocol {
       function(output)
     } finally {
       output.flush()
-      //out.close()
-      // TODO: Move this
     }
   }
 }
