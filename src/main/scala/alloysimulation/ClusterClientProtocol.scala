@@ -164,32 +164,22 @@ class ClusterClientProtocol(name: String, input: InputStream,
 
   def start(): Unit = {
     try {
-      println("Watiting for Initial Data")
       val (alloy, dr) = recieveInitialData()
       a = Some(alloy)
       b = Some(alloy.mirror())
       range = Some(dr)
 
-      println(range)
-
-      println("Recieved Initial Data")
-
       while (!isClosed) {
         calculateNewTemperatures()
-        println("Sending new temperatures")
         ClusterClientProtocol.sendNewTemperatures(dataOutput, range.get,
           a.get.points)
-        println("Finished sending new temperatures")
 
         if (ClusterClientProtocol.recieveIsDone(dataInput)) {
-          println("DONE")
           return
         }
 
-        println("Waiting for border temperatures")
         ClusterClientProtocol.recieveBorderTemperatures(dataInput, range.get,
           a.get.points)
-        println("Recieved border temperatures")
 
         swapAlloys()
       }

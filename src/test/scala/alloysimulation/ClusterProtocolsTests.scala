@@ -294,6 +294,60 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     countdown.await(1, TimeUnit.SECONDS)
   }
 
+  it should "handle borders correctly with multiple clients" in {
+    val ratios = (33, 33, 33)
+    val materialsDef = new MaterialsDefinition(1.0, 1.0, 1.0, ratios)
+
+    val width = 8
+    val height = 8
+    val depth = 1
+
+    val numGenerations = 20
+
+    val a = Alloy(width, height, depth, materialsDef)
+    val b = a.mirror()
+
+    a.update(0, 0, 0, 100000.0)
+
+    val clients = Main.splitClients(Array(
+      ("rho", 2),
+      ("pi", 1)
+    ))(a)
+
+    val phaser = new Phaser(clients.size)
+
+    val countdown = new CountDownLatch(clients.size * 2)
+
+    for ((clientName, range) <- clients) {
+      onThread(() => {
+        val (inputA, outputA) = getInOut()
+        val (inputB, outputB) = getInOut()
+
+        val client = new ClusterClientProtocol(clientName, inputA, outputB)
+        val server = new ClusterServerProtocol(a, b, numGenerations, range,
+          phaser, inputB, outputA)
+
+        onThread(() => {
+          client.start()
+          countdown.countDown()
+        })
+
+        onThread(() => {
+          server.start()
+          countdown.countDown()
+        })
+      })
+    }
+
+    countdown.await(1, TimeUnit.SECONDS)
+
+    // The heated area should be still heated
+    assert(b(0, 0, 0) > 10.0)
+
+    // The heat should spread to other client
+    assert(b(width - 1, height - 1, 0) > 10.0)
+  }
+
   private def getInOut(): (DataInputStream, DataOutputStream) = {
     val in = new PipedInputStream()
     val out = new PipedOutputStream(in)
