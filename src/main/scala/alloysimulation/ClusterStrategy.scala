@@ -125,7 +125,7 @@ class ClusterStrategy(a: Alloy, iterations: Int,
 
   private def startClientViaSsh(key: String, client: String): Unit = {
     val javaCommand = "/home/dl/jdk/jdk9/bin/java"
-    val clientCommand = f"$javaCommand -jar alloysimulation.jar client $serverIP $serverPort $client"
+    val clientCommand = f"$javaCommand -jar alloysimulation.jar cluster client $serverIP $serverPort $client"
     val sshCommand = f"ssh -i $key $client $clientCommand"
 
     println(sshCommand)

@@ -17,10 +17,13 @@ object Main {
     val height = 1024
     val depth = 1
 
-    val writeImage = false
-    val strategyType: StrategyType = Cluster()
+    val writeImage = true
+
     val dotsTemp = 10000
     val patternTemp = 7000
+
+    val brushWidth = 1
+    val brushHeight = 1
 
     val displayFunction = if (writeImage) {
       writeAlloyToFile(_,_)
@@ -30,8 +33,10 @@ object Main {
 
     val alloy = Alloy(width, height, depth, materialsDef)
 
-    stampPattern(alloy, patternTemp)
-    stampDots(alloy, dotsTemp)
+    stampPattern(alloy, patternTemp, brushWidth, brushHeight)
+    stampDots(alloy, dotsTemp, brushWidth, brushHeight)
+
+    val strategyType: StrategyType = getStrategyType(args)
 
     val strategy: Strategy = strategyType match {
       case SingleCore() =>
@@ -45,11 +50,7 @@ object Main {
 
       case Cluster() =>
         val (isServer, serverIP, serverPort, thisName, keyFile, clientsFile) =
-          if (args.head == "server") {
-            getServerArgs(args)
-          } else {
-            getClientArgs(args)
-          }
+          getClusterArgs(args)
 
         val clients = clientsFile.map(getClients)
 
@@ -60,37 +61,66 @@ object Main {
     strategy.run()
   }
 
-  private def getServerArgs(args: Array[String]): ClusterArgs = {
-    try {
-      val ip = args(1)
-      val port = args(2).toInt
-      val key = Some(args(3))
-      val clientsFile = args(4)
+  private def getStrategyType(args: Array[String]): StrategyType = {
+    if (!args.nonEmpty) {
+      sys.error(
+        "No evaluation strategy given. Valid strategies are:\n" +
+        "single, forkjoin, cluster"
+      )
+    }
 
-      (true, ip, port, "localhost", key, Some(clientsFile))
-    } catch {
-      case e: ArrayIndexOutOfBoundsException =>
-        sys.error(
-          "Server arguments are incorrect.\n" +
-          "Correct arguements are: IP PORT KEY_FILE CLIENTS_FILE"
-        )
+    args.head match {
+      case "single" => SingleCore()
+      case "forkjoin" => ForkJoin()
+      case "cluster" => Cluster()
+      case t => sys.error(f"Invalid evaluation strategy $t")
     }
   }
 
-  private def getClientArgs(args: Array[String]): ClusterArgs = {
-    try {
-      val ip = args(1)
-      val port = args(2).toInt
-      val name = args(3)
-
-      (false, ip, port, name, None, None)
-    } catch {
-      case e: ArrayIndexOutOfBoundsException =>
-        sys.error(
-          "Client arguments are incorrect.\n" +
-          "Correct arguements are: IP PORT CLIENT_NAME"
-        )
+  private def getClusterArgs(args: Array[String]): ClusterArgs = {
+    if (args.size < 2) {
+      sys.error(
+        "Cluster program type not given. Valid types:\n" +
+        "server, client"
+      )
     }
+
+    if (args(1) == "server") {
+      getServerArgs(args)
+    } else {
+      getClientArgs(args)
+    }
+  }
+
+  private def getServerArgs(args: Array[String]): ClusterArgs = {
+    if (args.size < 6) {
+      sys.error(
+        "Server arguments are incorrect.\n" +
+        "Correct arguements are:\ncluster server IP PORT KEY_FILE CLIENTS_FILE"
+      )
+    }
+
+    val ip = args(2)
+    val port = args(3).toInt
+    val key = args(4)
+    val clientsFile = args(5)
+
+    (true, ip, port, "localhost", Some(key), Some(clientsFile))
+  }
+
+  private def getClientArgs(args: Array[String]): ClusterArgs = {
+    if (args.size < 5) {
+      sys.error(
+        "Client arguments are incorrect.\n" +
+        "Correct arguements are:\ncluster client IP PORT CLIENT_NAME"
+      )
+    }
+
+    val ip = args(2)
+    val port = args(3).toInt
+    val name = args(4)
+
+    (false, ip, port, name, None, None)
   }
 
   private def writeAlloyToFile(alloy: Alloy, generation: Alloy.Generation): Unit = {
@@ -152,7 +182,21 @@ object Main {
     new String(Files.readAllBytes(Paths.get(filepath)), UTF_8)
   }
 
-  private def stampDots(alloy: Alloy, temperature: Double): Unit = {
+  private def drawPoint(alloy: Alloy, temperature: Double, brushWidth: Int,
+    brushHeight: Int, x: Int, y: Int, z: Int): Unit = {
+    for (
+      xb <- -brushWidth to brushWidth;
+      yb <- -brushHeight to brushHeight;
+      aX = x + xb;
+      aY = y + yb;
+      if aX >= 0 && aY >= 0 && aX < alloy.width && aY < alloy.height
+    ) {
+      alloy.update(aX, aY, z, temperature)
+    }
+  }
+
+  private def stampDots(alloy: Alloy, temperature: Double, brushWidth: Int,
+    brushHeight: Int): Unit = {
     val width = alloy.getWidth()
     val height = alloy.getHeight()
 
@@ -163,16 +207,14 @@ object Main {
       val x = a * (width / 10)
       val y = b * (height / 10)
 
-      alloy.update(x.toInt, y.toInt, 0, temperature * (a + b))
+      drawPoint(alloy, temperature * (a + b), brushWidth, brushHeight, x, y, 0)
     }
   }
 
-  private def stampPattern(alloy: Alloy, temperature: Double): Unit = {
+  private def stampPattern(alloy: Alloy, temperature: Double, brushWidth: Int,
+    brushHeight: Int): Unit = {
     val width = alloy.getWidth()
     val height = alloy.getHeight()
-
-    val widthBrush = width / 10
-    val heightBrush = height / 10
 
     val boundary = Math.min(
       ((width / 2) * 0.8).toInt,
@@ -197,7 +239,8 @@ object Main {
         }
 
         for ((x, y) <- points) {
-          alloy.update(x.toInt, y.toInt, 0, temperature)
+          drawPoint(alloy, temperature, brushWidth, brushHeight, x.toInt,
+            y.toInt, 0)
         }
       }
     }
