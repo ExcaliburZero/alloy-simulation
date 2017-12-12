@@ -44,7 +44,6 @@ object ClusterServerProtocol {
 
   def sendPointsSection(output: DataOutputStream, range: DataRange,
     points: Alloy.Points): Unit = {
-    // TODO(chris): Add handling for borders
     val start = range.start
     val end = range.end
 

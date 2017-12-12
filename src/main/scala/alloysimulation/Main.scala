@@ -130,9 +130,15 @@ object Main {
     println(generation)
   }
 
-  private def getClients(clientsFile: String): Alloy => HashMap[String, DataRange] = {
-    val contents = readFile(clientsFile)
+  private def getClients(clientsFile: String):
+    Alloy => HashMap[String, DataRange] = {
+    val clients = getClientsInfo(clientsFile)
 
+    splitClients(clients)
+  }
+
+  private def getClientsInfo(clientsFile: String): Array[(String, Int)] = {
+    val contents = readFile(clientsFile)
 
     val clients = for (line <- contents.split("\n")) yield {
       val parts = line.split(",")
@@ -143,6 +149,11 @@ object Main {
       (name, number)
     }
 
+    clients
+  }
+
+  def splitClients(clients: Array[(String, Int)]):
+    Alloy => HashMap[String, DataRange] = {
     val total = clients.map(_._2).sum
 
     (alloy: Alloy) => {
@@ -155,6 +166,10 @@ object Main {
       val clientsRanges = new HashMap[String, DataRange]()
       var start = 0
       for (i <- 0 until clients.size) {
+        if (i != 0) {
+          start -= 1
+        }
+
         val end = if (i == clients.size -1) {
           val before = start + clients(i)._2 * per
 

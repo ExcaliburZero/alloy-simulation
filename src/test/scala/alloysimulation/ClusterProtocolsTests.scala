@@ -20,7 +20,7 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
   "ClusterProtocols" should "be able to send and recieve MaterialsDefinitions" in {
     val ratios = (25, 15, 60)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    
+
     val (input, output) = getInOut()
 
     ClusterServerProtocol.sendMaterialsDefinition(output, materialsDef)
@@ -70,7 +70,7 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     actual shouldBe materials
   }
 
-  it should "be able to send and recieve new temperature values" in {
+  it should "be able to send and recieve new temperature values with borders" in {
     val range = DataRange(0, 2, 3, 2, 1, true, true)
     val points = Array.ofDim[Alloy.Point](3, 2, 1)
 
@@ -93,6 +93,69 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     pointsDestination shouldBe points
   }
 
+  it should "be able to send and recieve new temperature values with border above" in {
+    val range = DataRange(0, 2, 3, 2, 1, true, false)
+    val points = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    points(0)(1).update(0, 0.24)
+    points(1)(1).update(0, -2.2)
+    points(2)(0).update(0, -1.34)
+
+    val pointsDestination = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    val (input, output) = getInOut()
+
+    ClusterClientProtocol.sendNewTemperatures(output, range, points)
+    ClusterServerProtocol.recieveNewTemperatures(input, range,
+      pointsDestination)
+
+    // Borders should not be updated
+    points(0)(1).update(0, 0.0)
+
+    pointsDestination shouldBe points
+  }
+
+  it should "be able to send and recieve new temperature values with border below" in {
+    val range = DataRange(0, 2, 3, 2, 1, false, true)
+    val points = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    points(0)(1).update(0, 0.24)
+    points(1)(1).update(0, -2.2)
+    points(2)(0).update(0, -1.34)
+
+    val pointsDestination = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    val (input, output) = getInOut()
+
+    ClusterClientProtocol.sendNewTemperatures(output, range, points)
+    ClusterServerProtocol.recieveNewTemperatures(input, range,
+      pointsDestination)
+
+    // Borders should not be updated
+    points(2)(0).update(0, 0.0)
+
+    pointsDestination shouldBe points
+  }
+
+  it should "be able to send and recieve new temperature values with no borders" in {
+    val range = DataRange(0, 2, 3, 2, 1, false, false)
+    val points = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    points(0)(1).update(0, 0.24)
+    points(1)(1).update(0, -2.2)
+    points(2)(0).update(0, -1.34)
+
+    val pointsDestination = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    val (input, output) = getInOut()
+
+    ClusterClientProtocol.sendNewTemperatures(output, range, points)
+    ClusterServerProtocol.recieveNewTemperatures(input, range,
+      pointsDestination)
+
+    pointsDestination shouldBe points
+  }
+
   it should "be able to send done or continue messages" in {
     val (input, output) = getInOut()
 
@@ -104,7 +167,7 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     actual shouldBe expected
   }
 
-  it should "be able to send and recieve border temperature values" in {
+  it should "be able to send and recieve border temperature values with borders on both sides" in {
     val range = DataRange(0, 2, 3, 2, 1, true, true)
     val points = Array.ofDim[Alloy.Point](3, 2, 1)
 
@@ -122,6 +185,73 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
 
     // Non-Borders should not be updated
     points(1)(1).update(0, 0.0)
+
+    pointsDestination shouldBe points
+  }
+
+  it should "be able to send and recieve border temperature values with border above" in {
+    val range = DataRange(0, 2, 3, 2, 1, true, false)
+    val points = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    points(0)(1).update(0, 0.24)
+    points(1)(1).update(0, -2.2)
+    points(2)(0).update(0, -1.34)
+
+    val pointsDestination = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    val (input, output) = getInOut()
+
+    ClusterServerProtocol.sendBorderTemperatures(output, range, points)
+    ClusterClientProtocol.recieveBorderTemperatures(input, range,
+      pointsDestination)
+
+    points(1)(1).update(0, 0.0)
+    points(2)(0).update(0, 0.0)
+
+    pointsDestination shouldBe points
+  }
+
+  it should "be able to send and recieve border temperature values with border below" in {
+    val range = DataRange(0, 2, 3, 2, 1, false, true)
+    val points = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    points(0)(1).update(0, 0.24)
+    points(1)(1).update(0, -2.2)
+    points(2)(0).update(0, -1.34)
+
+    val pointsDestination = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    val (input, output) = getInOut()
+
+    ClusterServerProtocol.sendBorderTemperatures(output, range, points)
+    ClusterClientProtocol.recieveBorderTemperatures(input, range,
+      pointsDestination)
+
+    points(0)(1).update(0, 0.0)
+    points(1)(1).update(0, 0.0)
+
+    pointsDestination shouldBe points
+  }
+
+  it should "be able to send and recieve border temperature values with no borders" in {
+    val range = DataRange(0, 2, 3, 2, 1, false, false)
+    val points = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    points(0)(1).update(0, 0.24)
+    points(1)(1).update(0, -2.2)
+    points(2)(0).update(0, -1.34)
+
+    val pointsDestination = Array.ofDim[Alloy.Point](3, 2, 1)
+
+    val (input, output) = getInOut()
+
+    ClusterServerProtocol.sendBorderTemperatures(output, range, points)
+    ClusterClientProtocol.recieveBorderTemperatures(input, range,
+      pointsDestination)
+
+    points(0)(1).update(0, 0.0)
+    points(1)(1).update(0, 0.0)
+    points(2)(0).update(0, 0.0)
 
     pointsDestination shouldBe points
   }
