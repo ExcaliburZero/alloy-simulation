@@ -14,7 +14,7 @@ class ForkJoinStrategyTests extends FlatSpec with Matchers {
     val height = 5
     val depth = 1
 
-    val alloy = Alloy(width, height, depth, materialsDef)
+    val alloy = Alloy(width, height, depth, materialsDef, 0)
 
     val strategy = new ForkJoinStrategy(alloy, iterations, displayFunction,
       smallThreshold)
@@ -31,7 +31,7 @@ class ForkJoinStrategyTests extends FlatSpec with Matchers {
     val height = 20
     val depth = 1
 
-    val alloy = Alloy(width, height, depth, materialsDef)
+    val alloy = Alloy(width, height, depth, materialsDef, 0)
 
     val strategy = new ForkJoinStrategy(alloy, iterations, displayFunction,
       smallThreshold)

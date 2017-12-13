@@ -19,9 +19,14 @@ object Main {
 
     val writeImage = true
 
+    val startingTemp = 0
     val dotsTemp = 10000
     val patternTemp = 7000
     val cornersTemp = 100000
+    val maxTemp = 255
+
+    val applyHeat = true
+    val applyPattern = false
 
     val brushWidth = 1
     val brushHeight = 1
@@ -30,20 +35,28 @@ object Main {
 
     val displayFunction = if (writeImage) {
       (a: Alloy, gen: Alloy.Generation) => {
-        writeAlloyToFile(a, gen)
-        applyHeatToCorners(a, cornersTemp)
+        writeAlloyToFile(a, gen, maxTemp)
+
+        if (applyHeat) {
+          applyHeatToCorners(a, cornersTemp)
+        }
       }
     } else {
       (a: Alloy, gen: Alloy.Generation) => {
         println(gen)
-        applyHeatToCorners(a, cornersTemp)
+
+        if (applyHeat) {
+          applyHeatToCorners(a, cornersTemp)
+        }
       }
     }
 
-    val alloy = Alloy(width, height, depth, materialsDef)
+    val alloy = Alloy(width, height, depth, materialsDef, startingTemp)
 
-    //stampPattern(alloy, patternTemp, brushWidth, brushHeight)
-    //stampDots(alloy, dotsTemp, brushWidth, brushHeight)
+    if (applyPattern) {
+      stampPattern(alloy, patternTemp, brushWidth, brushHeight)
+      stampDots(alloy, dotsTemp, brushWidth, brushHeight)
+    }
 
     val strategyType: StrategyType = getStrategyType(args)
 
@@ -131,9 +144,10 @@ object Main {
     (false, ip, port, name, None, None)
   }
 
-  private def writeAlloyToFile(alloy: Alloy, generation: Alloy.Generation): Unit = {
+  private def writeAlloyToFile(alloy: Alloy, generation: Alloy.Generation,
+    maxTemp: Double): Unit = {
     val filepath = "frames/%05d.png".format(generation)
-    RGBBitmap.writeToPNG(alloy, filepath)
+    RGBBitmap.writeToPNG(alloy, filepath, maxTemp)
 
     println(generation)
   }

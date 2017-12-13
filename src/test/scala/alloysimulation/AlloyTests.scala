@@ -6,13 +6,13 @@ class AlloyTests extends FlatSpec with Matchers {
   "Alloy" should "be able to be instantiated" in {
     val ratios = (25, 15, 60)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val alloy = Alloy(5, 8, 10, materialsDef)
+    val alloy = Alloy(5, 8, 10, materialsDef, 0)
   }
 
   it should "be able to calculate the next temperatures" in {
     val ratios = (25, 15, 60)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val alloy = Alloy(5, 8, 10, materialsDef)
+    val alloy = Alloy(5, 8, 10, materialsDef, 0)
     val alloy2 = alloy.mirror()
 
     alloy.calculateNextTemp(alloy2)
@@ -21,7 +21,7 @@ class AlloyTests extends FlatSpec with Matchers {
   it should "be able to be converted to a GNU plot definition" in {
     val ratios = (25, 15, 60)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val alloy = Alloy(1, 2, 3, materialsDef)
+    val alloy = Alloy(1, 2, 3, materialsDef, 0)
     
     val expected = Array(
       "0 0 0 0.0",
@@ -39,7 +39,7 @@ class AlloyTests extends FlatSpec with Matchers {
   it should "be able to randomize its temperature values" in {
     val ratios = (25, 15, 60)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val alloy = Alloy(5, 8, 10, materialsDef)
+    val alloy = Alloy(5, 8, 10, materialsDef, 0)
 
     alloy.randomizeTemps()
   }
@@ -50,7 +50,7 @@ class AlloyTests extends FlatSpec with Matchers {
 
       val ratios = (25, 15, 60)
       val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-      val alloy = Alloy(w, h, d, materialsDef)
+      val alloy = Alloy(w, h, d, materialsDef, 0)
 
       def hasNoNegatives(): Unit = {
         for (
@@ -75,7 +75,7 @@ class AlloyTests extends FlatSpec with Matchers {
 
       val ratios = (25, 15, 60)
       val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-      val alloy = Alloy(w, h, d, materialsDef)
+      val alloy = Alloy(w, h, d, materialsDef, 0)
       val alloy2 = alloy.mirror()
 
       def hasNoNegatives(): Unit = {
@@ -109,7 +109,7 @@ class AlloyTests extends FlatSpec with Matchers {
 
     val ratios = (25, 15, 60)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val alloy = Alloy(w, h, d, materialsDef)
+    val alloy = Alloy(w, h, d, materialsDef, 0)
     val alloy2 = alloy.mirror()
 
     def hasAllZeros(): Unit = {

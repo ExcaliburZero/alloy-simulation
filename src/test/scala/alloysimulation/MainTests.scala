@@ -13,7 +13,7 @@ class MainTests extends FlatSpec with Matchers {
 
     val ratios = (33, 33, 33)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val alloy = Alloy(width, height, 1, materialsDef)
+    val alloy = Alloy(width, height, 1, materialsDef, 0)
 
     val clientRanges = Main.splitClients(clients)(alloy)
 
@@ -31,7 +31,7 @@ class MainTests extends FlatSpec with Matchers {
 
     val ratios = (33, 33, 33)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val alloy = Alloy(width, height, 1, materialsDef)
+    val alloy = Alloy(width, height, 1, materialsDef, 0)
 
     val clientRanges = Main.splitClients(clients)(alloy)
 

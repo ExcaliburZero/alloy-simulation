@@ -13,7 +13,7 @@ class SingleThreadStrategyTests extends FlatSpec with Matchers {
     val height = 5
     val depth = 1
 
-    val alloy = Alloy(width, height, depth, materialsDef)
+    val alloy = Alloy(width, height, depth, materialsDef, 0)
 
     val strategy = new SingleThreadStrategy(alloy, iterations, displayFunction)
   }
@@ -28,7 +28,7 @@ class SingleThreadStrategyTests extends FlatSpec with Matchers {
     val height = 5
     val depth = 1
 
-    val alloy = Alloy(width, height, depth, materialsDef)
+    val alloy = Alloy(width, height, depth, materialsDef, 0)
 
     val strategy = new SingleThreadStrategy(alloy, iterations, displayFunction)
 

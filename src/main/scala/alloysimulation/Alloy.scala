@@ -30,7 +30,8 @@ object Alloy {
   type Generation = Int
   type DisplayFunction = (Alloy, Generation) => Unit
 
-  def apply(width: Int, height: Int, depth: Int, materialsDef: MaterialsDefinition): Alloy = {
+  def apply(width: Int, height: Int, depth: Int,
+    materialsDef: MaterialsDefinition, temperature: Double): Alloy = {
     var points = Array.ofDim[Alloy.Point](width, height, depth)
     var materials = Array.ofDim[Double](width, height, depth, 3)
 
@@ -40,12 +41,18 @@ object Alloy {
       z <- 0 until depth
     ) yield materials(x)(y).update(z, randomMaterial(materialsDef))
 
+    for (
+      x <- 0 until width;
+      y <- 0 until height;
+      z <- 0 until depth
+    ) yield points(x)(y).update(z, temperature)
+
     new Alloy(width, height, depth, materialsDef, points, materials,
       0, 0, width, height)
   }
 
   def randomMaterial(materialsDef: MaterialsDefinition): Alloy.Material = {
-    val variance = 12.0
+    val variance = 25.0
     val p1 = Math.max(0.00001, materialsDef.percent1 + (scala.util.Random.nextDouble() * variance * 2) - variance)
     val p2 = Math.max(0.00001, materialsDef.percent2 + (scala.util.Random.nextDouble() * variance * 2) - variance)
     val p3 = Math.max(0.00001, materialsDef.percent3 + (scala.util.Random.nextDouble() * variance * 2) - variance)

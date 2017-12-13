@@ -267,7 +267,7 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     val numGenerations = 10
     val phaser = new Phaser(1)
 
-    val a = Alloy(width, height, depth, materialsDef)
+    val a = Alloy(width, height, depth, materialsDef, 0)
     val b = a.mirror()
 
     val range = DataRange(0, 2, width, height, depth, true, true)
@@ -304,7 +304,7 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
 
     val numGenerations = 20
 
-    val a = Alloy(width, height, depth, materialsDef)
+    val a = Alloy(width, height, depth, materialsDef, 0)
     val b = a.mirror()
 
     a.update(0, 0, 0, 100000.0)

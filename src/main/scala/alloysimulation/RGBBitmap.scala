@@ -12,14 +12,14 @@ import javax.imageio.ImageIO
 object RGBBitmap {
   val NUM_COLORS = 3
 
-  def writeToPNG(alloy: Alloy, filepath: String): Unit = {
+  def writeToPNG(alloy: Alloy, filepath: String, maxTemp: Double): Unit = {
     val image = new BufferedImage(alloy.getWidth(), alloy.getHeight(),
       BufferedImage.TYPE_INT_RGB)
 
     for(
       x <- 0 until alloy.getWidth();
       y <- 0 until alloy.getHeight();
-      c = Math.min(alloy(x, y, 0).toInt, 255)
+      c = Math.min((alloy(x, y, 0) / maxTemp * 255).toInt, 255)
     ){
       image.setRGB(x, y, (new Color(c, 0, 0)).getRGB())
     }
