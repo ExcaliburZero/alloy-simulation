@@ -149,7 +149,7 @@ object ClusterClientProtocol {
 }
 
 class ClusterClientProtocol(name: String, input: InputStream,
-  output: OutputStream) {
+  output: OutputStream, smallThreshold: Int) {
   private var a: Option[Alloy] = None
   private var b: Option[Alloy] = None
   private var range: Option[DataRange] = None
@@ -229,7 +229,6 @@ class ClusterClientProtocol(name: String, input: InputStream,
   }
 
   private def calculateNewTemperatures(): Unit = {
-    val smallThreshold = 16384
     val task = new CustomTask(smallThreshold, a.get, b.get)
 
     forkJoinPool.invoke(task)

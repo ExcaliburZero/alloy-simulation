@@ -11,30 +11,39 @@ object Main {
   def main(args: Array[String]): Unit = {
     val ratios = (33, 33, 33)
     val materialsDef = new MaterialsDefinition(0.75, 1.0, 1.25, ratios)
-    val iterations = 100
+    val iterations = 500
 
-    val width = 1024
-    val height = 1024
+    val width = 256
+    val height = 256
     val depth = 1
 
     val writeImage = true
 
     val dotsTemp = 10000
     val patternTemp = 7000
+    val cornersTemp = 100000
 
     val brushWidth = 1
     val brushHeight = 1
 
+    val smallThreshold = 16384
+
     val displayFunction = if (writeImage) {
-      writeAlloyToFile(_,_)
+      (a: Alloy, gen: Alloy.Generation) => {
+        writeAlloyToFile(a, gen)
+        applyHeatToCorners(a, cornersTemp)
+      }
     } else {
-      (_: Alloy, gen: Alloy.Generation) => println(gen)
+      (a: Alloy, gen: Alloy.Generation) => {
+        println(gen)
+        applyHeatToCorners(a, cornersTemp)
+      }
     }
 
     val alloy = Alloy(width, height, depth, materialsDef)
 
-    stampPattern(alloy, patternTemp, brushWidth, brushHeight)
-    stampDots(alloy, dotsTemp, brushWidth, brushHeight)
+    //stampPattern(alloy, patternTemp, brushWidth, brushHeight)
+    //stampDots(alloy, dotsTemp, brushWidth, brushHeight)
 
     val strategyType: StrategyType = getStrategyType(args)
 
@@ -43,7 +52,6 @@ object Main {
         new SingleThreadStrategy(alloy, iterations, displayFunction)
 
       case ForkJoin() =>
-        val smallThreshold = 16384
 
         new ForkJoinStrategy(alloy, iterations, displayFunction,
           smallThreshold)
@@ -55,7 +63,7 @@ object Main {
         val clients = clientsFile.map(getClients)
 
         new ClusterStrategy(alloy, iterations, displayFunction, isServer,
-          serverIP, serverPort, clients, thisName, keyFile)
+          serverIP, serverPort, clients, thisName, keyFile, smallThreshold)
     }
 
     strategy.run()
@@ -259,5 +267,10 @@ object Main {
         }
       }
     }
+  }
+
+  private def applyHeatToCorners(alloy: Alloy, temperature: Double): Unit = {
+    alloy.update(0, 0, 0, temperature)
+    alloy.update(alloy.width - 1, alloy.height - 1, 0, temperature)
   }
 }

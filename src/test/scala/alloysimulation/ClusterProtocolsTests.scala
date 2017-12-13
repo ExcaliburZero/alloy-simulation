@@ -275,7 +275,7 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
     val (inputA, outputA) = getInOut()
     val (inputB, outputB) = getInOut()
 
-    val client = new ClusterClientProtocol("rho", inputA, outputB)
+    val client = new ClusterClientProtocol("rho", inputA, outputB, 16384)
     val server = new ClusterServerProtocol(a, b, numGenerations, range,
       phaser, inputB, outputA)
 
@@ -323,7 +323,8 @@ class ClusterProtocolsTests extends FlatSpec with Matchers {
         val (inputA, outputA) = getInOut()
         val (inputB, outputB) = getInOut()
 
-        val client = new ClusterClientProtocol(clientName, inputA, outputB)
+        val client = new ClusterClientProtocol(clientName, inputA, outputB,
+          16384)
         val server = new ClusterServerProtocol(a, b, numGenerations, range,
           phaser, inputB, outputA)
 

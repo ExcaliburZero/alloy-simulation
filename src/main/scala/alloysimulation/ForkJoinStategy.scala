@@ -54,15 +54,5 @@ class CustomTask(smallThreshold: Int, a: Alloy, b: Alloy) extends RecursiveTask[
     )
 
     ForkJoinTask.invokeAll(subtasks.head, subtasks(1))
-
-    /*
-    for(subtask <- subtasks) {
-      subtask.fork()
-    }
-
-    for(subtask <- subtasks) {
-      subtask.join()
-    }
-    */
   }
 }

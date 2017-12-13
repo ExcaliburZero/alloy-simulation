@@ -17,7 +17,8 @@ class ClusterStrategy(a: Alloy, iterations: Int,
   displayFunction: Alloy.DisplayFunction, isServer: Boolean,
   serverIP: String, serverPort: Int,
   clients: Option[Alloy => HashMap[String,DataRange]],
-  thisName: String, keyFile: Option[String]) extends Strategy {
+  thisName: String, keyFile: Option[String], smallThreshold: Int)
+  extends Strategy {
 
   val b = a.mirror()
 
@@ -99,7 +100,8 @@ class ClusterStrategy(a: Alloy, iterations: Int,
 
     output.writeUTF(thisName)
 
-    val protocol = new ClusterClientProtocol("rho", input, output)
+    val protocol = new ClusterClientProtocol("rho", input, output,
+      smallThreshold)
     protocol.start()
   }
 
